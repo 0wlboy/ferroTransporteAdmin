@@ -1,6 +1,21 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../utils/supabase";
 
+const formatFecha = (dateString) => {
+    if (!dateString) return "";
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return dateString;
+
+    const day = d.getDate().toString().padStart(2, "0");
+    const month = (d.getMonth() + 1).toString().padStart(2, "0");
+    const year = d.getFullYear();
+
+    const hours = d.getHours().toString().padStart(2, "0");
+    const minutes = d.getMinutes().toString().padStart(2, "0");
+
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+};
+
 /**
  * Hook de paginación simple para la tabla 'peticiones'.
  * Resuelve los nombres de pasajeros y conductores consultando la tabla 'usuarios'.
@@ -9,7 +24,7 @@ export function usePaginatePetitions({ initialPageSize = 4 } = {}) {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    
+
     // Paginación
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(initialPageSize);
@@ -139,6 +154,18 @@ export function usePaginatePetitions({ initialPageSize = 4 } = {}) {
                     userFoto[u.ci_user] = u.foto_url;
                 });
 
+                const { data: vehicle, error: vError } = await supabase
+                    .from("vehiculos")
+                    .select("placa, foto_url")
+                    .in("placa", [...new Set(petitions.flatMap(p => [p.placa_vehiculo]).filter(Boolean))]);
+
+                if (vError) throw vError;
+
+                const vehicleMap = {};
+                vehicle?.forEach(v => {
+                    vehicleMap[v.placa] = v.foto_url;
+                });
+
                 const { data: locations, error: lError } = await supabase
                     .from("localizaciones")
                     .select("id, nombre")
@@ -159,8 +186,10 @@ export function usePaginatePetitions({ initialPageSize = 4 } = {}) {
                     foto_pasajero: userFoto[p.ci_pasajero] || null,
                     ci_driver: p.ci_driver || null,
                     driverName: p.ci_driver ? (userMap[p.ci_driver] || p.ci_driver) : "Por Asignar",
+                    foto_driver: userFoto[p.ci_driver] || null,
                     num_acompañantes: p.num_acompañantes || 0,
                     placa_vehiculo: p.placa_vehiculo || null,
+                    foto_vehiculo: vehicleMap[p.placa_vehiculo] || null,
                     origen_id: p.origen_id,
                     origen_nombre: locationMap[p.origen_id],
                     destino_id: p.destino_id,
@@ -169,7 +198,7 @@ export function usePaginatePetitions({ initialPageSize = 4 } = {}) {
                     descripcion: p.descripcion || null,
                     prioridad: p.prioridad,
                     estado: p.estado,
-                    fecha: p.created_at,
+                    fecha: formatFecha(p.created_at),
                 }));
 
                 setData(formatted);

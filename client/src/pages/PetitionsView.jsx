@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { usePaginatePetitions } from "../hooks/usePaginatePetitions";
 import StatCard from "../components/StatCard";
+import PetitionDetails from "../components/modals/PetitionDetails";
 import {
     Search,
     FileDown,
@@ -12,6 +13,9 @@ import {
     XCircle,
     User,
 } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
 
 export default function PetitionsView() {
     const {
@@ -33,8 +37,32 @@ export default function PetitionsView() {
         stats,
     } = usePaginatePetitions({ initialPageSize: 4 });
 
+    const handlePrintPDF = () => {
+        const doc = new jsPDF();
+        doc.text("Reporte de Peticiones", 80, 10);
+        doc.text("Fecha: " + new Date().toLocaleDateString(), 80, 15);
+
+        // Formatear datos para autotable
+        const tableData = petitions.map(p => [
+            p.id,
+            p.ci_pasajero,
+            p.ci_driver,
+            p.origen_nombre,
+            p.destino_nombre,
+            p.estado,
+            p.fecha,
+            p.prioridad,
+        ]);
+
+        const tableHeaders = ["ID", "CI Pasajero", "CI Conductor", "Origen", "Destino", "Estado", "Fecha", "Prioridad"];
+
+        autoTable(doc, { head: [tableHeaders], body: tableData, startY: 20, styles: { fontSize: 8 }, headStyles: { fillColor: [22, 163, 74] } });
+        doc.save("peticiones.pdf");
+    };
+
     // State for controlling active row action menu (logic only created for UI purposes)
     const [activeMenuId, setActiveMenuId] = useState(null);
+    const [selectedPetition, setSelectedPetition] = useState(null);
 
     // Calculate dynamic "Mostrando X-Y de Z" text
     const startIndex = (page - 1) * pageSize + 1;
@@ -135,10 +163,9 @@ export default function PetitionsView() {
                     </p>
                 </div>
 
-                {/* Print PDF Button (Omitted logic, UI only) */}
                 <div>
                     <button
-                        onClick={() => alert("Función Exportar a PDF (Próximamente disponible)")}
+                        onClick={() => handlePrintPDF()}
                         className="flex items-center gap-2 px-4 py-2.5 bg-white border border-primary text-primary hover:bg-primary-light hover:text-primary transition-all font-bold text-xs tracking-wider rounded-xl cursor-pointer shadow-xs hover:shadow-sm"
                     >
                         <FileDown className="w-4 h-4 text-primary" />
@@ -375,7 +402,7 @@ export default function PetitionsView() {
                                                     <div className="absolute right-6 mt-1 w-36 bg-white border border-gray-100 rounded-xl shadow-lg py-1.5 z-30 animate-fade-in text-left">
                                                         <button
                                                             onClick={() => {
-                                                                alert(`Ver detalle de ${item.id}`);
+                                                                setSelectedPetition(item);
                                                                 setActiveMenuId(null);
                                                             }}
                                                             className="block w-full px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-primary-light hover:text-primary transition-colors cursor-pointer"
@@ -446,6 +473,13 @@ export default function PetitionsView() {
                     </div>
                 </div>
             </div>
+
+            {selectedPetition && (
+                <PetitionDetails 
+                    petition={selectedPetition} 
+                    onClose={() => setSelectedPetition(null)} 
+                />
+            )}
         </div>
     );
 }
