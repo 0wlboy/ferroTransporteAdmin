@@ -3,6 +3,7 @@ import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
+import UserProfileModal from "./modals/userProfile";
 
 export default function Layout() {
     const { logout } = useAuth();
@@ -10,6 +11,7 @@ export default function Layout() {
     const location = useLocation();
     const [collapsed, setCollapsed] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
 
     const handleLogout = async () => {
         try {
@@ -24,7 +26,7 @@ export default function Layout() {
     const getHeaderTitle = () => {
         switch (location.pathname) {
             case "/petitions-view":
-                return "Titulo de Pagina"; // Exactly as in the user's mockup
+                return "Peticiones";
             case "/passenger-view":
                 return "Pasajeros";
             case "/driver-view":
@@ -46,9 +48,8 @@ export default function Layout() {
         <div className="flex h-screen bg-main-bg overflow-hidden font-sans antialiased text-gray-800">
             {/* Desktop Sidebar */}
             <aside
-                className={`hidden md:flex flex-col bg-white border-r border-[#F3E8EB] transition-all duration-300 shrink-0 ${
-                    collapsed ? "w-20" : "w-64"
-                }`}
+                className={`hidden md:flex flex-col bg-white border-r border-[#F3E8EB] transition-all duration-300 shrink-0 ${collapsed ? "w-20" : "w-64"
+                    }`}
             >
                 <Sidebar
                     collapsed={collapsed}
@@ -83,6 +84,7 @@ export default function Layout() {
                     setCollapsed={setCollapsed}
                     mobileOpen={mobileOpen}
                     setMobileOpen={setMobileOpen}
+                    onProfileClick={() => setIsProfileOpen(true)}
                 />
 
                 {/* Page Content View */}
@@ -90,6 +92,13 @@ export default function Layout() {
                     <Outlet />
                 </main>
             </div>
+
+            {isProfileOpen && (
+                <UserProfileModal
+                    onClose={() => setIsProfileOpen(false)}
+                    onLogout={handleLogout}
+                />
+            )}
         </div>
     );
 }
