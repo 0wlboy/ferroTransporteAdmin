@@ -30,6 +30,7 @@ export default function PetitionsView() {
         nextPage,
         prevPage,
         setPage,
+        stats,
     } = usePaginatePetitions({ initialPageSize: 4 });
 
     // State for controlling active row action menu (logic only created for UI purposes)
@@ -150,21 +151,20 @@ export default function PetitionsView() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <StatCard
                     title="Solicitudes Pendientes"
-                    value="14"
-                    subtext="+12% desde la última hora"
+                    value={stats.pendingTotal.toString()}
+                    subtext={`${stats.pendingToday} de ${stats.todayTotal} hechas hoy`}
                     icon={ClipboardList}
-                    trend={{ type: "up" }}
                 />
                 <StatCard
                     title="Viajes en Curso"
-                    value="42"
-                    subtext="Capacidad actual: 82%"
+                    value={stats.enCaminoTotal.toString()}
+                    subtext={`${stats.enCaminoToday} de ${stats.todayTotal} hechas hoy`}
                     icon={Car}
                 />
                 <StatCard
                     title="Solicitudes Canceladas"
-                    value="8"
-                    subtext="De 100 hechas hoy"
+                    value={stats.cancelledTotal.toString()}
+                    subtext={`${stats.cancelledToday} de ${stats.todayTotal} hechas hoy`}
                     icon={XCircle}
                 />
             </div>
@@ -182,7 +182,7 @@ export default function PetitionsView() {
                             type="text"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Buscar por nombre o placa..."
+                            placeholder="Buscar por cedula o placa..."
                             className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all placeholder-gray-400 bg-[#F9FAFB]"
                         />
                     </div>
@@ -216,9 +216,9 @@ export default function PetitionsView() {
                                 className="w-full sm:w-auto text-xs font-bold text-gray-700 bg-white border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-primary cursor-pointer hover:bg-gray-55"
                             >
                                 <option value="all">Todos los Estados</option>
-                                <option value="Activo">Activo</option>
+                                <option value="En Camino">En Camino</option>
                                 <option value="Pendiente">Pendiente</option>
-                                <option value="En viaje">En viaje</option>
+                                <option value="Completado">Completado</option>
                                 <option value="Cancelado">Cancelado</option>
                             </select>
                         </div>
@@ -273,9 +273,9 @@ export default function PetitionsView() {
                                         <td className="p-4 pl-6">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100 shrink-0 bg-gray-50 flex items-center justify-center">
-                                                    {item.passengerAvatar ? (
+                                                    {item.foto_pasajero ? (
                                                         <img
-                                                            src={item.passengerAvatar}
+                                                            src={item.foto_pasajero}
                                                             alt={item.passengerName}
                                                             className="w-full h-full object-cover"
                                                         />
@@ -319,36 +319,36 @@ export default function PetitionsView() {
 
                                         {/* Date Column */}
                                         <td className="p-4 text-xs font-semibold text-gray-500">
-                                            {item.dateString}
+                                            {item.fecha}
                                         </td>
 
                                         {/* Status Column */}
                                         <td className="p-4">
                                             <span
-                                                className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide ${item.status === "Activo"
+                                                className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide ${item.estado === "Completado"
                                                     ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
-                                                    : item.status === "Pendiente"
+                                                    : item.estado === "Pendiente"
                                                         ? "bg-gray-100 text-gray-600 border border-gray-200/60"
-                                                        : item.status === "En viaje"
+                                                        : item.estado === "En camino"
                                                             ? "bg-blue-50 text-blue-700 border border-blue-100"
                                                             : "bg-red-50 text-red-700 border border-red-100"
                                                     }`}
                                             >
-                                                {item.status}
+                                                {item.estado}
                                             </span>
                                         </td>
 
                                         {/* Priority Column */}
                                         <td className="p-4">
                                             <span
-                                                className={`text-[10px] font-extrabold tracking-wider ${item.priority === "ALTA"
+                                                className={`text-[10px] font-extrabold tracking-wider ${item.prioridad === "Alta"
                                                     ? "text-red-600"
-                                                    : item.priority === "MEDIA"
+                                                    : item.prioridad === "Media"
                                                         ? "text-blue-600"
                                                         : "text-gray-500"
                                                     }`}
                                             >
-                                                {item.priority}
+                                                {item.prioridad}
                                             </span>
                                         </td>
 
