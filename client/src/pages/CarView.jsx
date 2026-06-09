@@ -57,14 +57,14 @@ export default function CarView() {
 
         const tableHeaders = ["ID", "Marca", "Modelo", "Año", "Placa", "Asientos", "Maletero Amplio", "Conductor", "Estado"];
 
-        autoTable(doc, { 
-            head: [tableHeaders], 
-            body: tableData, 
-            startY: 20, 
-            styles: { fontSize: 8 }, 
+        autoTable(doc, {
+            head: [tableHeaders],
+            body: tableData,
+            startY: 20,
+            styles: { fontSize: 8 },
             headStyles: { fillColor: [138, 21, 56] } // Brand primary color (#8A1538)
         });
-        doc.save("vehiculos.pdf");
+        doc.save("reporte de vehiculos.pdf");
     };
 
     // State for controlling active row action menu (logic only created for UI purposes)
