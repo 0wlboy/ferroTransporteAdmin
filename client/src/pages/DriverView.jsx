@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { usePaginateDrivers } from "../hooks/usePaginateDrivers";
 import StatCard from "../components/StatCard";
 import DriverDetails from "../components/modals/DriverDetails";
@@ -11,8 +11,7 @@ import {
     Car,
     User,
     Plus,
-    CheckCircle,
-    Users
+    CheckCircle
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";

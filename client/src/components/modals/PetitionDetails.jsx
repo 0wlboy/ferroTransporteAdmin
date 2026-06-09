@@ -1,5 +1,4 @@
-import React from "react";
-import { X, User, ArrowDown, MapPin, Calendar, CheckCircle, Info } from "lucide-react";
+import { X, User, Calendar } from "lucide-react";
 
 export default function PetitionDetails({ petition, onClose }) {
     if (!petition) return null;

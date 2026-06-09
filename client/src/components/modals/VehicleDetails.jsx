@@ -1,5 +1,4 @@
-import React from "react";
-import { X, Car, Calendar, User, Info } from "lucide-react";
+import { X, Car, Calendar, User } from "lucide-react";
 
 export default function VehicleDetails({ vehicle, onClose }) {
     if (!vehicle) return null;

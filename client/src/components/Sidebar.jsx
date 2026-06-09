@@ -7,7 +7,6 @@ import {
     Truck,
     Bus,
     MapPin,
-    Map,
     LogOut,
     ChevronRight,
 } from "lucide-react";
@@ -20,7 +19,6 @@ const navItems = [
     { to: "/driver-view", label: "Conductores", icon: Truck, end: false },
     { to: "/vehicle-view", label: "Vehículos", icon: Bus, end: false },
     { to: "/locations-view", label: "Localizaciones", icon: MapPin, end: false },
-    { to: "/map-view", label: "Mapa", icon: Map, end: false },
 ];
 
 export default function Sidebar({ collapsed, setMobileOpen, handleLogout }) {
@@ -53,21 +51,18 @@ export default function Sidebar({ collapsed, setMobileOpen, handleLogout }) {
                         end={item.end}
                         onClick={() => setMobileOpen(false)}
                         className={({ isActive }) =>
-                            `flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold transition-all group cursor-pointer ${
-                                collapsed ? "justify-center" : ""
-                            } ${
-                                isActive
-                                    ? "bg-primary-light text-primary border-l-4 border-primary pl-2.5"
-                                    : "text-gray-600 hover:text-primary hover:bg-[#FAF5F6]"
+                            `flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold transition-all group cursor-pointer ${collapsed ? "justify-center" : ""
+                            } ${isActive
+                                ? "bg-primary-light text-primary border-l-4 border-primary pl-2.5"
+                                : "text-gray-600 hover:text-primary hover:bg-[#FAF5F6]"
                             }`
                         }
                     >
                         {({ isActive }) => (
                             <>
                                 <item.icon
-                                    className={`w-5 h-5 shrink-0 transition-colors ${
-                                        isActive ? "text-primary" : "text-gray-400 group-hover:text-primary"
-                                    }`}
+                                    className={`w-5 h-5 shrink-0 transition-colors ${isActive ? "text-primary" : "text-gray-400 group-hover:text-primary"
+                                        }`}
                                 />
                                 {!collapsed && (
                                     <>
@@ -82,36 +77,6 @@ export default function Sidebar({ collapsed, setMobileOpen, handleLogout }) {
                     </NavLink>
                 ))}
             </nav>
-
-            {/* Bottom Section - Profile & Logout */}
-            <div className="p-4 border-t border-[#F3E8EB] bg-[#FCFCFD]">
-                {!collapsed && currentUser && (
-                    <div className="flex items-center gap-3 px-2 py-2 mb-3 bg-[#FAF5F6] rounded-xl border border-[#F9EBEC]">
-                        <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 overflow-hidden">
-                            <span className="text-primary text-xs font-black uppercase">
-                                {currentUser.email ? currentUser.email.substring(0, 2) : "AD"}
-                            </span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-gray-800 text-xs font-bold truncate">
-                                {currentUser.name || "Usuario"}
-                            </p>
-                            <p className="text-gray-400 text-[10px] font-semibold truncate uppercase tracking-wider">
-                                {currentUser.role || "Admin"}
-                            </p>
-                        </div>
-                    </div>
-                )}
-                <button
-                    onClick={handleLogout}
-                    className={`flex items-center gap-3 px-3.5 py-3 w-full rounded-xl text-gray-500 hover:bg-[#FAF5F6] hover:text-primary transition-all text-sm font-bold cursor-pointer ${
-                        collapsed ? "justify-center" : ""
-                    }`}
-                >
-                    <LogOut className="w-5 h-5 shrink-0" />
-                    {!collapsed && <span className="tracking-wide">Cerrar sesión</span>}
-                </button>
-            </div>
         </div>
     );
 }

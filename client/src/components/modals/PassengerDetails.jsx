@@ -1,4 +1,3 @@
-import React from "react";
 import { X, Mail, Phone, Calendar, User, Landmark } from "lucide-react";
 
 export default function PassengerDetails({ passenger, onClose }) {

@@ -190,6 +190,7 @@ export function usePaginatePassengers({ initialPageSize = 4 } = {}) {
 
     // Reiniciar paginación al cambiar filtros
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setPage(1);
     }, [searchTerm, statusFilter, sortBy]);
 

@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
-    const { currentUser } = useAuth(); // or log in action if any
     const navigate = useNavigate();
     const [email, setEmail] = useState("administrador@ferrotransporte.com");
     const [password, setPassword] = useState("admin123");

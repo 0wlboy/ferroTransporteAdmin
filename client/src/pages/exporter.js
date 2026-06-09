@@ -4,3 +4,4 @@ export { default as PassengerView } from "./PassengerView";
 export { default as PetitionsView } from "./PetitionsView";
 export { default as Login } from "./Login";
 export { default as Register } from "./Register";
+export { default as LocationView } from "./LocationView";

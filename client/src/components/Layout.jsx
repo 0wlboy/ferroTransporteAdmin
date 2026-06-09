@@ -35,8 +35,6 @@ export default function Layout() {
                 return "Vehículos";
             case "/locations-view":
                 return "Localizaciones";
-            case "/map-view":
-                return "Mapa";
             case "/home-view":
                 return "Home";
             default:

@@ -1,5 +1,4 @@
-import React from "react";
-import { X, Mail, Landmark } from "lucide-react";
+import { X, Mail } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
 export default function UserProfileModal({ onClose, onLogout }) {
@@ -11,12 +10,6 @@ export default function UserProfileModal({ onClose, onLogout }) {
         email: currentUser?.email || "javier.arnaldo@transadmin.com",
         ci: currentUser?.ci || "22834867",
         avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=250&auto=format&fit=crop"
-    };
-
-    const handleBackdropClick = (e) => {
-        if (e.target === e.currentTarget) {
-            onClose();
-        }
     };
 
     return (

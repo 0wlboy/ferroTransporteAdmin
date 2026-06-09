@@ -1,4 +1,3 @@
-import React from "react";
 import { X, Mail, Phone, Calendar, User, Landmark, Car } from "lucide-react";
 
 export default function DriverDetails({ driver, onClose }) {

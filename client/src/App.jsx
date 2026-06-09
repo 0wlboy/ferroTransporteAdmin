@@ -1,4 +1,4 @@
-import { CarView, DriverView, PassengerView, PetitionsView, Login, Register } from "./pages/exporter";
+import { CarView, DriverView, PassengerView, PetitionsView, LocationView, Login, Register } from "./pages/exporter";
 import { Routes, Route, Navigate, BrowserRouter } from "react-router-dom";
 import Layout from "./components/Layout";
 import AuthProvider from "./context/AuthContext";
@@ -16,6 +16,7 @@ export default function App() {
             <Route path="driver-view" element={<DriverView />} />
             <Route path="vehicle-view" element={<CarView />} />
             <Route path="petitions-view" element={<PetitionsView />} />
+            <Route path="locations-view" element={<LocationView />} />
           </Route>
         </Routes>
       </AuthProvider>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { usePaginateVehicles } from "../hooks/usePaginateVehicles";
 import StatCard from "../components/StatCard";
 import VehicleDetails from "../components/modals/VehicleDetails";
