@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { usePaginateVehicles } from "../hooks/usePaginateVehicles";
 import StatCard from "../components/StatCard";
 import VehicleDetails from "../components/modals/VehicleDetails";
@@ -18,6 +19,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 export default function CarView() {
+    const navigate = useNavigate();
     const {
         data: vehicles,
         loading,
@@ -414,6 +416,15 @@ export default function CarView() {
                                                             className="block w-full px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-primary-light hover:text-primary transition-colors cursor-pointer"
                                                         >
                                                             Ver Detalle
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                navigate(`/car-activity/${item.id}`);
+                                                                setActiveMenuId(null);
+                                                            }}
+                                                            className="block w-full px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-primary-light hover:text-primary transition-colors cursor-pointer border-t border-gray-100"
+                                                        >
+                                                            Ver Actividad
                                                         </button>
                                                     </div>
                                                 </>

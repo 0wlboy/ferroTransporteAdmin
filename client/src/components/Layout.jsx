@@ -27,6 +27,9 @@ export default function Layout() {
         if (location.pathname.startsWith("/user-activity")) {
             return "Actividad de Usuario";
         }
+        if (location.pathname.startsWith("/car-activity")) {
+            return "Actividad de Vehículo";
+        }
         switch (location.pathname) {
             case "/petitions-view":
                 return "Peticiones";
