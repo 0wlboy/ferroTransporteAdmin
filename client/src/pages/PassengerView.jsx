@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { usePaginatePassengers } from "../hooks/usePaginatePassenges";
 import StatCard from "../components/StatCard";
 import PassengerDetails from "../components/modals/PassengerDetails";
@@ -17,6 +18,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 export default function PassengerView() {
+    const navigate = useNavigate();
     const {
         data: passengers,
         loading,
@@ -387,6 +389,15 @@ export default function PassengerView() {
                                                             className="block w-full px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-primary-light hover:text-primary transition-colors cursor-pointer"
                                                         >
                                                             Ver Detalle
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                navigate(`/user-activity/${item.id}`);
+                                                                setActiveMenuId(null);
+                                                            }}
+                                                            className="block w-full px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-primary-light hover:text-primary transition-colors cursor-pointer border-t border-gray-100"
+                                                        >
+                                                            Ver Actividad
                                                         </button>
                                                     </div>
                                                 </>

@@ -5,3 +5,4 @@ export { default as PetitionsView } from "./PetitionsView";
 export { default as Login } from "./Login";
 export { default as Register } from "./Register";
 export { default as LocationView } from "./LocationView";
+export { default as UserActivity } from "./UserActivity";

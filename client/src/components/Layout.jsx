@@ -24,6 +24,9 @@ export default function Layout() {
 
     // Determine header title based on route path
     const getHeaderTitle = () => {
+        if (location.pathname.startsWith("/user-activity")) {
+            return "Actividad de Usuario";
+        }
         switch (location.pathname) {
             case "/petitions-view":
                 return "Peticiones";

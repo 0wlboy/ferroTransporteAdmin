@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { usePaginateDrivers } from "../hooks/usePaginateDrivers";
 import StatCard from "../components/StatCard";
 import DriverDetails from "../components/modals/DriverDetails";
@@ -17,6 +18,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 export default function DriverView() {
+    const navigate = useNavigate();
     const {
         data: drivers,
         loading,
@@ -424,6 +426,15 @@ export default function DriverView() {
                                                             className="block w-full px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-primary-light hover:text-primary transition-colors cursor-pointer"
                                                         >
                                                             Ver Detalle
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                navigate(`/user-activity/${item.id}`);
+                                                                setActiveMenuId(null);
+                                                            }}
+                                                            className="block w-full px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-primary-light hover:text-primary transition-colors cursor-pointer border-t border-gray-100"
+                                                        >
+                                                            Ver Actividad
                                                         </button>
                                                     </div>
                                                 </>
