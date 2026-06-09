@@ -1,15 +1,24 @@
 import React from "react";
 
-export default function StatCard({ title, value, subtext, icon: Icon, trend }) {
+export default function StatCard({
+    title,
+    value,
+    subtext,
+    icon: Icon,
+    trend,
+    titleColor = "text-primary/80",
+    iconBg = "bg-primary-light border-primary-light-border",
+    iconColor = "text-primary"
+}) {
     return (
         <div className="bg-white p-6 rounded-2xl border border-[#F3E8EB] shadow-sm flex flex-col justify-between hover:shadow-md transition-all duration-300">
             <div className="flex justify-between items-start">
-                <span className="text-xs font-bold text-primary/80 uppercase tracking-wider">
+                <span className={`text-xs font-bold uppercase tracking-wider ${titleColor}`}>
                     {title}
                 </span>
                 {Icon && (
-                    <div className="w-10 h-10 rounded-xl bg-primary-light flex items-center justify-center border border-primary-light-border">
-                        <Icon className="w-5 h-5 text-primary" />
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${iconBg}`}>
+                        <Icon className={`w-5 h-5 ${iconColor}`} />
                     </div>
                 )}
             </div>

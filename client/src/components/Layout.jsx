@@ -92,13 +92,6 @@ export default function Layout() {
                     <Outlet />
                 </main>
             </div>
-
-            {isProfileOpen && (
-                <UserProfileModal
-                    onClose={() => setIsProfileOpen(false)}
-                    onLogout={handleLogout}
-                />
-            )}
         </div>
     );
 }
