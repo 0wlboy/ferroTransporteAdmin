@@ -345,10 +345,16 @@ export default function PassengerView() {
                                         </td>
 
                                         {/* Estado Column */}
-                                        <td className="p-4 text-xs font-bold text-gray-800">
-                                            {item.activo ? "Activo" : "Inactivo"}
+                                        <td className="p-4">
+                                            <span
+                                                className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide border ${item.activo === true
+                                                    ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                                                    : "bg-gray-50 text-gray-700 border-gray-150"
+                                                    }`}
+                                            >
+                                                {item.activo ? "Activo" : "Inactivo"}
+                                            </span>
                                         </td>
-
                                         {/* Fecha Column (Date & Time Stacked) */}
                                         <td className="p-4 text-xs">
                                             <p className="font-semibold text-gray-700">

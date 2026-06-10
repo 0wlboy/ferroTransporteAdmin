@@ -21,7 +21,7 @@ export default function AuthProvider({ children }) {
             const { data: dbUser, error: dbError } = await supabase
                 .from("usuarios")
                 .select("*")
-                .eq("id", user.id)
+                .eq("auth_id", user.id)
                 .single();
 
             if (dbError || !dbUser) {
@@ -178,25 +178,56 @@ export default function AuthProvider({ children }) {
             throw new Error("No se pudo crear el usuario.");
         }
 
-        // 2. Create the user profile in 'usuarios' table
-        const { error: dbError } = await supabase
+        // 2. Upload avatar file to Supabase Storage if provided
+        let fotoUrl = null;
+        if (userData.avatarFile) {
+            try {
+                const fileExt = userData.avatarFile.name.split(".").pop();
+                const fileName = `avatar_${Date.now()}.${fileExt}`;
+                const filePath = `${user.id}/${fileName}`;
+
+                const { error: uploadError } = await supabase.storage
+                    .from("fotosPerfil")
+                    .upload(filePath, userData.avatarFile, {
+                        cacheControl: "3600",
+                        upsert: true
+                    });
+
+                if (uploadError) {
+                    console.error("Error uploading avatar in register flow:", uploadError);
+                } else {
+                    const { data: { publicUrl } } = supabase.storage
+                        .from("fotosPerfil")
+                        .getPublicUrl(filePath);
+                    fotoUrl = publicUrl;
+                }
+            } catch (err) {
+                console.error("Avatar upload exception:", err);
+            }
+        }
+
+        // 3. Create the user profile in 'usuarios' table
+        const { data: dbUser, error: dbError } = await supabase
             .from("usuarios")
             .insert({
-                id: user.id,
+                auth_id: user.id,
                 email: user.email,
                 primer_nombre: userData.primerNombre || "",
                 apellido: userData.apellido || "",
                 ci_user: userData.ci || "",
-                telf: userData.telefono || userData.telf || "",
+                telf: userData.telf || "",
+                foto_url: fotoUrl,
                 role: userData.role || "Administrador",
                 activo: true
-            });
+            })
+            .select()
+            .single();
 
         if (dbError) {
             throw new Error("Error al guardar el perfil del usuario: " + dbError.message);
         }
 
-        // 3. Handle session auto-login if available, or force sign-in
+        // 4. Handle session auto-login if available, or force sign-in
         let session = data.session;
         if (!session) {
             // If Supabase did not return a session on signUp, try signing in immediately
@@ -210,21 +241,33 @@ export default function AuthProvider({ children }) {
             session = signInRes.data;
         }
 
-        // 4. Load the user profile
-        const matchedUser = await fetchUserProfile(session);
-        if (!matchedUser) {
+        // Check role
+        if (dbUser.role !== "Administrador" && dbUser.role !== "Admin") {
             await supabase.auth.signOut();
             throw new Error("Acceso denegado. El usuario registrado no tiene permisos de Administrador.");
         }
 
+        // Construct the loggedInUser object directly from the insert results
+        const loggedInUser = {
+            id: dbUser.id,
+            email: user.email,
+            name: `${dbUser.primer_nombre || ""} ${dbUser.apellido || ""}`.trim() || "Administrador",
+            role: dbUser.role,
+            ci: dbUser.ci_user,
+            avatar: dbUser.foto_url || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=250&auto=format&fit=crop"
+        };
+
+        // Set immediate context state
+        setCurrentUser(loggedInUser);
+
         // 5. Store session in localStorage
         const sessionData = {
-            user: matchedUser,
+            user: loggedInUser,
             timestamp: Date.now()
         };
         localStorage.setItem("ft_admin_session", JSON.stringify(sessionData));
 
-        return matchedUser;
+        return loggedInUser;
     };
 
     const logout = async () => {

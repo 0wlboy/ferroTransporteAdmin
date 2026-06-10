@@ -22,7 +22,7 @@ const navItems = [
 ];
 
 export default function Sidebar({ collapsed, setMobileOpen, handleLogout }) {
-    const { currentUser } = useAuth();
+    const { currentUser, logout } = useAuth();
 
     return (
         <div className="flex flex-col h-full bg-sidebar-bg border-r border-[#F3E8EB] select-none">
@@ -76,6 +76,7 @@ export default function Sidebar({ collapsed, setMobileOpen, handleLogout }) {
                         )}
                     </NavLink>
                 ))}
+
             </nav>
         </div>
     );

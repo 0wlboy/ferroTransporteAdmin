@@ -9,7 +9,7 @@ export default function UserProfileModal({ onClose, onLogout }) {
         name: currentUser?.name || "Javier Arnaldo",
         email: currentUser?.email || "javier.arnaldo@transadmin.com",
         ci: currentUser?.ci || "22834867",
-        avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=250&auto=format&fit=crop"
+        avatar: currentUser?.avatar || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=250&auto=format&fit=crop"
     };
 
     return (

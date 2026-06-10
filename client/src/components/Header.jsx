@@ -1,7 +1,9 @@
 import React from "react";
 import { Menu, X } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 export default function Header({ title, collapsed, setCollapsed, mobileOpen, setMobileOpen, onProfileClick }) {
+    const { currentUser } = useAuth();
     return (
         <header className="flex items-center justify-between px-6 py-4 bg-white border-b border-[#F3E8EB] shrink-0 select-none">
             {/* Left side: Menu toggles & Title */}
@@ -37,7 +39,7 @@ export default function Header({ title, collapsed, setCollapsed, mobileOpen, set
                     {/* Profile Avatar */}
                     <div className="w-8 h-8 rounded-full overflow-hidden border border-white/20 shadow-inner">
                         <img
-                            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=120&auto=format&fit=crop"
+                            src={currentUser?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=120&auto=format&fit=crop"}
                             alt="Administrador Avatar"
                             className="w-full h-full object-cover"
                             onError={(e) => {

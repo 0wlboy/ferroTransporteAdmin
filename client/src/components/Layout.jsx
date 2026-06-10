@@ -3,7 +3,7 @@ import { Outlet, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
-import UserProfileModal from "./modals/userProfile";
+import UserProfileModal from "./modals/UserProfile";
 
 export default function Layout() {
     const { currentUser, logout } = useAuth();
@@ -84,7 +84,7 @@ export default function Layout() {
             )}
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
                 {/* Top Header */}
                 <Header
                     title={getHeaderTitle()}
@@ -94,6 +94,13 @@ export default function Layout() {
                     setMobileOpen={setMobileOpen}
                     onProfileClick={() => setIsProfileOpen(true)}
                 />
+
+                {isProfileOpen && (
+                    <UserProfileModal
+                        onClose={() => setIsProfileOpen(false)}
+                        onLogout={handleLogout}
+                    />
+                )}
 
                 {/* Page Content View */}
                 <main className="flex-1 overflow-y-auto bg-main-bg p-6 md:p-8">

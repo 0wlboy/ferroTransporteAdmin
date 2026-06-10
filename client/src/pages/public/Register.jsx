@@ -2,18 +2,20 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import Input from "../../components/Input";
+import ImagePicker from "../../components/imgPicker";
 
 export default function Register() {
     const navigate = useNavigate();
     const { currentUser, register } = useAuth();
-    
+
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [primerNombre, setPrimerNombre] = useState("");
     const [apellido, setApellido] = useState("");
     const [ci, setCi] = useState("");
     const [telefono, setTelefono] = useState("");
-    
+    const [avatarFile, setAvatarFile] = useState(null);
+
     // Validation states
     const [errors, setErrors] = useState({
         email: "",
@@ -37,7 +39,7 @@ export default function Register() {
     const passwordRegex = /^.{6,}$/;
     const nameRegex = /^[a-zA-ZÀ-ÿ\s]{2,30}$/;
     const ciRegex = /^\d{6,9}$/;
-    const phoneRegex = /^\d{7,15}$/;
+    const phoneRegex = /^\d{11}$/;
 
     const validateEmail = (val) => {
         if (!val) return "El correo electrónico es requerido.";
@@ -71,7 +73,7 @@ export default function Register() {
 
     const validateTelefono = (val) => {
         if (!val) return "El teléfono es requerido.";
-        if (!phoneRegex.test(val)) return "El teléfono debe contener solo números (7-15 dígitos).";
+        if (!phoneRegex.test(val)) return "El teléfono debe contener solo números (11 dígitos).";
         return "";
     };
 
@@ -151,6 +153,7 @@ export default function Register() {
                 apellido,
                 ci,
                 telefono,
+                avatarFile,
                 role: "Administrador"
             });
             navigate("/petitions-view");
@@ -172,7 +175,13 @@ export default function Register() {
                         </svg>
                     </div>
                     <h2 className="text-2xl font-bold text-[#8A1538]">Crear Cuenta de Admin</h2>
-                    <p className="text-gray-500 text-sm mt-1">Regístrate como administrador en la plataforma</p>
+                    <p className="text-gray-500 text-sm mt-1 mb-4">Regístrate como administrador en la plataforma</p>
+
+                    <ImagePicker
+                        bucketName="fotosPerfil"
+                        placeholderType="user"
+                        onFileSelect={setAvatarFile}
+                    />
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
