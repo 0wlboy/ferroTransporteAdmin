@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { usePaginatePassengers } from "../hooks/usePaginatePassenges";
-import StatCard from "../components/StatCard";
-import PassengerDetails from "../components/modals/PassengerDetails";
+import { usePaginatePassengers } from "../../hooks/usePaginatePassenges";
+import StatCard from "../../components/cards/StatCard";
 import {
     Search,
     FileDown,
@@ -69,7 +68,6 @@ export default function PassengerView() {
 
     // State for controlling active row action menu (logic only created for UI purposes)
     const [activeMenuId, setActiveMenuId] = useState(null);
-    const [selectedPassenger, setSelectedPassenger] = useState(null);
 
     // Calculate dynamic "Mostrando X-Y de Z" text
     const startIndex = totalItems > 0 ? (page - 1) * pageSize + 1 : 0;
@@ -383,19 +381,10 @@ export default function PassengerView() {
                                                     <div className="absolute right-6 mt-1 w-36 bg-white border border-gray-100 rounded-xl shadow-lg py-1.5 z-30 animate-fade-in text-left">
                                                         <button
                                                             onClick={() => {
-                                                                setSelectedPassenger(item);
-                                                                setActiveMenuId(null);
-                                                            }}
-                                                            className="block w-full px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-primary-light hover:text-primary transition-colors cursor-pointer"
-                                                        >
-                                                            Ver Detalle
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
                                                                 navigate(`/user-activity/${item.id}`);
                                                                 setActiveMenuId(null);
                                                             }}
-                                                            className="block w-full px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-primary-light hover:text-primary transition-colors cursor-pointer border-t border-gray-100"
+                                                            className="block w-full px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-primary-light hover:text-primary transition-colors cursor-pointer"
                                                         >
                                                             Ver Actividad
                                                         </button>
@@ -445,13 +434,6 @@ export default function PassengerView() {
                     </div>
                 </div>
             </div>
-
-            {selectedPassenger && (
-                <PassengerDetails
-                    passenger={selectedPassenger}
-                    onClose={() => setSelectedPassenger(null)}
-                />
-            )}
         </div>
     );
 }

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import useGetLocations from "../hooks/useGetLocations";
-import { LocationCard } from "../components/LocationCard";
+import useGetLocations from "../../hooks/useGetLocations";
+import { LocationCard } from "../../components/cards/LocationCard";
 import { Search, FileDown, Plus } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";

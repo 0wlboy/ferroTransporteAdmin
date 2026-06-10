@@ -1,13 +1,13 @@
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
-import useGetCarActivity from "../hooks/useGetCarActivity";
-import { 
-    Search, 
-    FileDown, 
-    MoreVertical, 
-    ChevronLeft, 
-    ChevronRight, 
-    Car, 
-    User, 
+import useGetCarActivity from "../../hooks/useGetCarActivity";
+import {
+    Search,
+    FileDown,
+    MoreVertical,
+    ChevronLeft,
+    ChevronRight,
+    Car,
+    User,
     X,
     ArrowLeft
 } from "lucide-react";
@@ -18,7 +18,7 @@ export default function CarActivity() {
     const { id } = useParams();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    
+
     const vehicleId = id || searchParams.get("id");
 
     const {
@@ -48,7 +48,7 @@ export default function CarActivity() {
     // PDF Export
     const handlePrintPDF = () => {
         if (!vehicleProfile) return;
-        
+
         const doc = new jsPDF();
         doc.text(`Reporte de Actividad de Vehículo - ${vehicleProfile.fullName}`, 50, 10);
         doc.text(`Placa: ${vehicleProfile.placa} | Conductor: ${vehicleProfile.driverName}`, 60, 15);
@@ -115,7 +115,7 @@ export default function CarActivity() {
                         className={`w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${page === i
                             ? "bg-primary text-white shadow-md shadow-primary/20"
                             : "bg-white text-gray-500 hover:bg-gray-100 hover:text-primary border border-gray-100"
-                        }`}
+                            }`}
                     >
                         {i}
                     </button>
@@ -132,7 +132,7 @@ export default function CarActivity() {
                 className={`w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${page === 1
                     ? "bg-primary text-white shadow-md"
                     : "bg-white text-gray-500 hover:bg-gray-100 border border-gray-100"
-                }`}
+                    }`}
             >
                 1
             </button>
@@ -153,7 +153,7 @@ export default function CarActivity() {
                     className={`w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${page === i
                         ? "bg-primary text-white shadow-md"
                         : "bg-white text-gray-500 hover:bg-gray-100 border border-gray-100"
-                    }`}
+                        }`}
                 >
                     {i}
                 </button>
@@ -171,7 +171,7 @@ export default function CarActivity() {
                 className={`w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${page === totalPages
                     ? "bg-primary text-white shadow-md"
                     : "bg-white text-gray-500 hover:bg-gray-100 border border-gray-100"
-                }`}
+                    }`}
             >
                 {totalPages}
             </button>
@@ -185,7 +185,7 @@ export default function CarActivity() {
             {/* Top Back Nav & Header Buttons */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                    <button 
+                    <button
                         onClick={() => navigate(-1)}
                         className="flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-primary transition-colors cursor-pointer mb-2"
                     >
@@ -219,7 +219,7 @@ export default function CarActivity() {
 
             {/* Stats Cards Section */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                
+
                 {/* Card 1: Vehicle Profile Info */}
                 <div className="bg-white p-6 rounded-2xl border border-[#F3E8EB] shadow-xs flex justify-between items-center">
                     <div className="space-y-2.5">
@@ -246,7 +246,7 @@ export default function CarActivity() {
                             </div>
                         </div>
                     </div>
-                    
+
                     <div className="w-16 h-16 rounded-2xl overflow-hidden border border-gray-150 shrink-0 bg-gray-50 flex items-center justify-center shadow-xs">
                         {vehicleProfile.foto_vehiculo ? (
                             <img
@@ -299,7 +299,7 @@ export default function CarActivity() {
 
             {/* Filter and Search Bar Section */}
             <div className="bg-white rounded-2xl border border-[#F3E8EB] p-5 shadow-xs flex flex-col md:flex-row gap-4 items-center justify-between">
-                
+
                 {/* Search Input */}
                 <div className="relative w-full md:max-w-md">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-400" />
@@ -384,7 +384,7 @@ export default function CarActivity() {
                             ) : (
                                 paginatedPetitions.map((item) => (
                                     <tr key={item.id} className="hover:bg-[#FCFCFD]/50 transition-colors">
-                                        
+
                                         {/* Pasajero Column */}
                                         <td className="p-4 pl-6">
                                             <div className="flex items-center gap-3">
@@ -427,15 +427,14 @@ export default function CarActivity() {
 
                                         {/* Estado Column */}
                                         <td className="p-4">
-                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide border ${
-                                                item.estado?.toLowerCase() === "completado" || item.estado?.toLowerCase() === "completada"
+                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide border ${item.estado?.toLowerCase() === "completado" || item.estado?.toLowerCase() === "completada"
                                                     ? "bg-emerald-50 text-emerald-700 border-emerald-100"
                                                     : item.estado?.toLowerCase() === "pendiente"
                                                         ? "bg-amber-50 text-amber-700 border-amber-100 animate-pulse"
                                                         : item.estado?.toLowerCase() === "en camino" || item.estado?.toLowerCase() === "en viaje"
                                                             ? "bg-blue-50 text-blue-700 border-blue-100"
                                                             : "bg-red-50 text-red-700 border-red-100"
-                                            }`}>
+                                                }`}>
                                                 {item.estado?.toUpperCase()}
                                             </span>
                                         </td>

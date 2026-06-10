@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { usePaginateVehicles } from "../hooks/usePaginateVehicles";
-import StatCard from "../components/StatCard";
-import VehicleDetails from "../components/modals/VehicleDetails";
+import { usePaginateDrivers } from "../../hooks/usePaginateDrivers";
+import StatCard from "../../components/cards/StatCard";
+import DriverDetails from "../../components/modals/DriverDetails";
 import {
     Search,
     FileDown,
@@ -12,16 +12,15 @@ import {
     Car,
     User,
     Plus,
-    Wrench,
     CheckCircle
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-export default function CarView() {
+export default function DriverView() {
     const navigate = useNavigate();
     const {
-        data: vehicles,
+        data: drivers,
         loading,
         page,
         totalPages,
@@ -37,27 +36,27 @@ export default function CarView() {
         prevPage,
         setPage,
         stats,
-    } = usePaginateVehicles({ initialPageSize: 4 });
+    } = usePaginateDrivers({ initialPageSize: 4 });
 
     const handlePrintPDF = () => {
         const doc = new jsPDF();
-        doc.text("Reporte de Vehículos", 80, 10);
+        doc.text("Reporte de Conductores", 80, 10);
         doc.text("Fecha: " + new Date().toLocaleDateString(), 80, 15);
 
         // Formatear datos para autotable
-        const tableData = vehicles.map(v => [
-            v.id,
-            v.marca,
-            v.modelo,
-            v.año,
-            v.placa,
-            v.num_asientos,
-            v.maletero_amplio ? "Sí" : "No",
-            v.driverName,
-            v.estado
+        const tableData = drivers.map(p => [
+            p.id,
+            `${p.nombre} ${p.apellido}`,
+            p.ci_user,
+            p.localizacion || "N/D",
+            p.correo || "N/D",
+            p.telefono || "N/D",
+            p.vehiculo_placa || "N/D",
+            p.activo ? "Activo" : "Inactivo",
+            p.fecha
         ]);
 
-        const tableHeaders = ["ID", "Marca", "Modelo", "Año", "Placa", "Asientos", "Maletero Amplio", "Conductor", "Estado"];
+        const tableHeaders = ["ID", "Nombre Completo", "CI", "Gerencia", "Correo", "Teléfono", "Vehiculo Placa", "Estado", "Fecha Registro"];
 
         autoTable(doc, {
             head: [tableHeaders],
@@ -66,12 +65,12 @@ export default function CarView() {
             styles: { fontSize: 8 },
             headStyles: { fillColor: [138, 21, 56] } // Brand primary color (#8A1538)
         });
-        doc.save("reporte de vehiculos.pdf");
+        doc.save("reporte de conductores.pdf");
     };
 
     // State for controlling active row action menu (logic only created for UI purposes)
     const [activeMenuId, setActiveMenuId] = useState(null);
-    const [selectedVehicle, setSelectedVehicle] = useState(null);
+    const [selectedDriver, setSelectedDriver] = useState(null);
 
     // Calculate dynamic "Mostrando X-Y de Z" text
     const startIndex = totalItems > 0 ? (page - 1) * pageSize + 1 : 0;
@@ -165,10 +164,10 @@ export default function CarView() {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-black text-gray-900 tracking-tight">
-                        Gestion de Vehiculos
+                        Gestion de Conductores
                     </h1>
                     <p className="text-gray-500 text-sm mt-1">
-                        Administra los vehiculos registrados
+                        Administra los conductores registrados
                     </p>
                 </div>
 
@@ -181,11 +180,11 @@ export default function CarView() {
                         <span>EXPORTA A PDF</span>
                     </button>
                     <button
-                        onClick={() => alert("Función para añadir localización o vehículo en desarrollo")}
+                        onClick={() => alert("Función para añadir conductor en desarrollo")}
                         className="flex items-center gap-2 px-4 py-2.5 bg-primary border border-transparent text-white hover:bg-primary-hover transition-all font-bold text-xs tracking-wider rounded-xl cursor-pointer shadow-xs hover:shadow-sm"
                     >
                         <Plus className="w-4 h-4 text-white" />
-                        <span>AÑADIR LOCALIZACIÓN</span>
+                        <span>AÑADIR CONDUCTOR</span>
                     </button>
                 </div>
             </div>
@@ -193,28 +192,28 @@ export default function CarView() {
             {/* Stat Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <StatCard
-                    title="Total Flota"
-                    value={stats.totalFlota.toString()}
-                    subtext={`+${stats.totalThisMonth} este mes`}
+                    title="Total de Conductores"
+                    value={stats.totalConductores.toString()}
+                    subtext={null}
                     icon={Car}
                 />
                 <StatCard
-                    title="Activos"
-                    value={stats.operativosTotal.toString()}
-                    subtext={`${stats.totalFlota > 0 ? Math.round((stats.operativosTotal / stats.totalFlota) * 100) : 0}% disponibilidad`}
+                    title="Total Activos"
+                    value={stats.activosTotal.toString()}
+                    subtext="Generado una peticion hoy"
                     icon={CheckCircle}
                     titleColor="text-emerald-700"
                     iconBg="bg-emerald-50 border-emerald-100"
                     iconColor="text-emerald-600"
                 />
                 <StatCard
-                    title="En Taller"
-                    value={stats.mantenimientoTotal.toString()}
-                    subtext={`${stats.mantenimientoToday} programados hoy`}
-                    icon={Wrench}
-                    titleColor="text-amber-700"
-                    iconBg="bg-amber-50 border-amber-100"
-                    iconColor="text-amber-600"
+                    title="Registrados Hoy"
+                    value={stats.totalToday.toString()}
+                    subtext={null}
+                    icon={User}
+                    titleColor="text-blue-700"
+                    iconBg="bg-blue-50 border-blue-100"
+                    iconColor="text-blue-600"
                 />
             </div>
 
@@ -231,7 +230,7 @@ export default function CarView() {
                             type="text"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Buscar por nombre o placa..."
+                            placeholder="Buscar por nombre o gerencia..."
                             className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all placeholder-gray-400 bg-[#F9FAFB]"
                         />
                     </div>
@@ -241,7 +240,7 @@ export default function CarView() {
                         {/* Sort Dropdown */}
                         <div className="flex items-center gap-2 w-full sm:w-auto">
                             <span className="text-xs font-semibold text-gray-400 whitespace-nowrap">
-                                Ordenado por:
+                                Orden por:
                             </span>
                             <select
                                 value={sortBy}
@@ -250,8 +249,10 @@ export default function CarView() {
                             >
                                 <option value="fecha_desc">Fecha Descendente</option>
                                 <option value="fecha_asc">Fecha Ascendente</option>
-                                <option value="placa_asc">Placa (A-Z)</option>
-                                <option value="placa_desc">Placa (Z-A)</option>
+                                <option value="nombre_asc">Nombre (A-Z)</option>
+                                <option value="nombre_desc">Nombre (Z-A)</option>
+                                <option value="apellido_asc">Apellido (A-Z)</option>
+                                <option value="apellido_desc">Apellido (Z-A)</option>
                             </select>
                         </div>
 
@@ -266,9 +267,8 @@ export default function CarView() {
                                 className="w-full sm:w-auto text-xs font-bold text-gray-700 bg-white border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-primary cursor-pointer hover:bg-gray-55"
                             >
                                 <option value="all">Todos los Estados</option>
-                                <option value="Operativo">Operativo</option>
-                                <option value="Inoperativo">Inoperativo</option>
-                                <option value="Mantenimiento">Mantenimiento</option>
+                                <option value="true">Activos</option>
+                                <option value="false">Inactivos</option>
                             </select>
                         </div>
                     </div>
@@ -280,7 +280,7 @@ export default function CarView() {
                         <div className="absolute inset-0 bg-white/70 backdrop-blur-3xs flex items-center justify-center z-10 transition-opacity">
                             <div className="flex flex-col items-center gap-2">
                                 <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-                                <span className="text-xs font-bold text-primary">Cargando vehículos...</span>
+                                <span className="text-xs font-bold text-primary">Cargando conductores...</span>
                             </div>
                         </div>
                     )}
@@ -289,16 +289,19 @@ export default function CarView() {
                         <thead>
                             <tr className="border-b border-[#F3E8EB] bg-[#FCFCFD]">
                                 <th className="p-4 text-[10px] font-black text-primary tracking-wider uppercase pl-6">
-                                    VEHICULO
-                                </th>
-                                <th className="p-4 text-[10px] font-black text-primary tracking-wider uppercase">
-                                    PLACA
-                                </th>
-                                <th className="p-4 text-[10px] font-black text-primary tracking-wider uppercase">
                                     CONDUCTOR
                                 </th>
                                 <th className="p-4 text-[10px] font-black text-primary tracking-wider uppercase">
+                                    GERENCIA O DEPARTAMENTO
+                                </th>
+                                <th className="p-4 text-[10px] font-black text-primary tracking-wider uppercase">
+                                    VEHICULO ASIGNADO
+                                </th>
+                                <th className="p-4 text-[10px] font-black text-primary tracking-wider uppercase">
                                     ESTADO
+                                </th>
+                                <th className="p-4 text-[10px] font-black text-primary tracking-wider uppercase">
+                                    FECHA DE CREACION
                                 </th>
                                 <th className="p-4 text-[10px] font-black text-primary tracking-wider uppercase text-center pr-6">
                                     ACCIONES
@@ -306,55 +309,23 @@ export default function CarView() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[#F3E8EB]">
-                            {vehicles.length === 0 ? (
+                            {drivers.length === 0 ? (
                                 <tr>
-                                    <td colSpan="5" className="p-8 text-center text-gray-400 text-sm">
-                                        No se encontraron vehículos que coincidan con los filtros aplicados.
+                                    <td colSpan="6" className="p-8 text-center text-gray-400 text-sm">
+                                        No se encontraron conductores que coincidan con los filtros aplicados.
                                     </td>
                                 </tr>
                             ) : (
-                                vehicles.map((item) => (
+                                drivers.map((item) => (
                                     <tr key={item.id} className="hover:bg-[#FCFCFD]/50 transition-colors">
-                                        {/* Vehicle Info Column */}
+                                        {/* Driver Info Column */}
                                         <td className="p-4 pl-6">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-12 h-12 rounded-lg overflow-hidden border border-gray-150 shrink-0 bg-gray-50 flex items-center justify-center">
-                                                    {item.foto_vehiculo ? (
+                                                <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-150 shrink-0 bg-gray-55 flex items-center justify-center shadow-xs">
+                                                    {item.foto_url ? (
                                                         <img
-                                                            src={item.foto_vehiculo}
-                                                            alt={`${item.marca} ${item.modelo}`}
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                    ) : (
-                                                        <Car className="w-6 h-6 text-gray-400" />
-                                                    )}
-                                                </div>
-                                                <div>
-                                                    <p className="text-xs font-bold text-gray-900 leading-tight">
-                                                        {item.marca} {item.modelo}
-                                                    </p>
-                                                    <p className="text-[10px] text-gray-400 font-medium mt-0.5">
-                                                        Año: {item.año}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </td>
-
-                                        {/* License Plate Badge Column */}
-                                        <td className="p-4">
-                                            <span className="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-bold font-mono bg-[#F9FAFB] border border-[#F3E8EB] text-gray-800 tracking-wider">
-                                                {item.placa}
-                                            </span>
-                                        </td>
-
-                                        {/* Driver Info Column */}
-                                        <td className="p-4 text-xs">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-100 shrink-0 bg-gray-50 flex items-center justify-center">
-                                                    {item.ci_driver && item.foto_driver ? (
-                                                        <img
-                                                            src={item.foto_driver}
-                                                            alt={item.driverName}
+                                                            src={item.foto_url}
+                                                            alt={`${item.nombre} ${item.apellido}`}
                                                             className="w-full h-full object-cover"
                                                         />
                                                     ) : (
@@ -362,33 +333,72 @@ export default function CarView() {
                                                     )}
                                                 </div>
                                                 <div>
-                                                    <p className="text-xs font-bold text-gray-800">
-                                                        {item.ci_driver ? item.driverName : "Por Asignar"}
+                                                    <p className="text-xs font-bold text-gray-900 leading-tight">
+                                                        {item.nombre} {item.apellido}
                                                     </p>
-                                                    {item.ci_driver && (
-                                                        <p className="text-[9px] text-gray-400 font-semibold mt-0.5">
-                                                            CI: {item.ci_driver}
-                                                        </p>
-                                                    )}
+                                                    <p className="text-[10px] text-gray-450 font-semibold mt-0.5">
+                                                        CI: {item.ci_user}
+                                                    </p>
                                                 </div>
                                             </div>
                                         </td>
 
-                                        {/* Status Badge Column */}
+                                        {/* Gerencia Column */}
+                                        <td className="p-4 text-xs font-bold text-gray-800">
+                                            {item.localizacion || "Sin Gerencia"}
+                                        </td>
+
+                                        {/* Vehiculo Info Column */}
+                                        <td className="p-4 pl-6">
+                                            {item.vehiculo_placa ? (
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-lg overflow-hidden border border-gray-150 shrink-0 bg-gray-50 flex items-center justify-center shadow-xs">
+                                                        {item.vehiculo_foto ? (
+                                                            <img
+                                                                src={item.vehiculo_foto}
+                                                                alt={`${item.vehiculo_placa}`}
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                        ) : (
+                                                            <Car className="w-4 h-4 text-gray-400" />
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs font-bold text-gray-800">
+                                                            {item.vehiculo_placa}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <span className="text-gray-400 font-medium italic text-[11px]">
+                                                    Sin vehículo
+                                                </span>
+                                            )}
+                                        </td>
+
+                                        {/* Estado Column */}
                                         <td className="p-4">
                                             <span
-                                                className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide border ${item.estado === "Operativo"
+                                                className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide border ${item.activo === true
                                                     ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                                                    : item.estado === "Mantenimiento"
-                                                        ? "bg-amber-50 text-amber-700 border-amber-100"
-                                                        : "bg-red-50 text-red-700 border-red-100"
+                                                    : "bg-gray-50 text-gray-700 border-gray-150"
                                                     }`}
                                             >
-                                                {item.estado}
+                                                {item.activo ? "Activo" : "Inactivo"}
                                             </span>
                                         </td>
 
-                                        {/* Actions Button & Menu */}
+                                        {/* Fecha Column (Date & Time Stacked) */}
+                                        <td className="p-4 text-xs">
+                                            <p className="font-semibold text-gray-700">
+                                                {item.fecha ? item.fecha.split(" ")[0] : ""}
+                                            </p>
+                                            <p className="text-[10px] text-gray-400 font-semibold mt-0.5">
+                                                {item.fecha ? item.fecha.split(" ")[1] : ""}
+                                            </p>
+                                        </td>
+
+                                        {/* Actions Column */}
                                         <td className="p-4 text-center pr-6 relative">
                                             <button
                                                 onClick={() =>
@@ -410,7 +420,7 @@ export default function CarView() {
                                                     <div className="absolute right-6 mt-1 w-36 bg-white border border-gray-100 rounded-xl shadow-lg py-1.5 z-30 animate-fade-in text-left">
                                                         <button
                                                             onClick={() => {
-                                                                setSelectedVehicle(item);
+                                                                setSelectedDriver(item);
                                                                 setActiveMenuId(null);
                                                             }}
                                                             className="block w-full px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-primary-light hover:text-primary transition-colors cursor-pointer"
@@ -419,7 +429,7 @@ export default function CarView() {
                                                         </button>
                                                         <button
                                                             onClick={() => {
-                                                                navigate(`/car-activity/${item.id}`);
+                                                                navigate(`/user-activity/${item.id}`);
                                                                 setActiveMenuId(null);
                                                             }}
                                                             className="block w-full px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-primary-light hover:text-primary transition-colors cursor-pointer border-t border-gray-100"
@@ -443,7 +453,7 @@ export default function CarView() {
                     <div className="text-[11px] font-semibold text-gray-400">
                         {totalItems > 0 ? (
                             <span>
-                                Mostrando {startIndex}–{endIndex} de {totalItems} vehículos registrados
+                                Mostrando {startIndex}–{endIndex} de {totalItems} conductores registrados
                             </span>
                         ) : (
                             <span>No hay registros disponibles</span>
@@ -473,10 +483,10 @@ export default function CarView() {
                 </div>
             </div>
 
-            {selectedVehicle && (
-                <VehicleDetails
-                    vehicle={selectedVehicle}
-                    onClose={() => setSelectedVehicle(null)}
+            {selectedDriver && (
+                <DriverDetails
+                    driver={selectedDriver}
+                    onClose={() => setSelectedDriver(null)}
                 />
             )}
         </div>

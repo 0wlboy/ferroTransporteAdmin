@@ -1,26 +1,25 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { usePaginateDrivers } from "../hooks/usePaginateDrivers";
-import StatCard from "../components/StatCard";
-import DriverDetails from "../components/modals/DriverDetails";
+import React, { useState } from "react";
+import { usePaginatePetitions } from "../../hooks/usePaginatePetitions";
+import StatCard from "../../components/cards/StatCard";
+import PetitionDetails from "../../components/modals/PetitionDetails";
 import {
     Search,
     FileDown,
     MoreVertical,
     ChevronLeft,
     ChevronRight,
+    ClipboardList,
     Car,
+    XCircle,
     User,
-    Plus,
-    CheckCircle
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-export default function DriverView() {
-    const navigate = useNavigate();
+
+export default function PetitionsView() {
     const {
-        data: drivers,
+        data: petitions,
         loading,
         page,
         totalPages,
@@ -36,44 +35,37 @@ export default function DriverView() {
         prevPage,
         setPage,
         stats,
-    } = usePaginateDrivers({ initialPageSize: 4 });
+    } = usePaginatePetitions({ initialPageSize: 4 });
 
     const handlePrintPDF = () => {
         const doc = new jsPDF();
-        doc.text("Reporte de Conductores", 80, 10);
+        doc.text("Reporte de Peticiones", 80, 10);
         doc.text("Fecha: " + new Date().toLocaleDateString(), 80, 15);
 
         // Formatear datos para autotable
-        const tableData = drivers.map(p => [
+        const tableData = petitions.map(p => [
             p.id,
-            `${p.nombre} ${p.apellido}`,
-            p.ci_user,
-            p.localizacion || "N/D",
-            p.correo || "N/D",
-            p.telefono || "N/D",
-            p.vehiculo_placa || "N/D",
-            p.activo ? "Activo" : "Inactivo",
-            p.fecha
+            p.ci_pasajero,
+            p.ci_driver,
+            p.origen_nombre,
+            p.destino_nombre,
+            p.estado,
+            p.fecha,
+            p.prioridad,
         ]);
 
-        const tableHeaders = ["ID", "Nombre Completo", "CI", "Gerencia", "Correo", "Teléfono", "Vehiculo Placa", "Estado", "Fecha Registro"];
+        const tableHeaders = ["ID", "CI Pasajero", "CI Conductor", "Origen", "Destino", "Estado", "Fecha", "Prioridad"];
 
-        autoTable(doc, {
-            head: [tableHeaders],
-            body: tableData,
-            startY: 20,
-            styles: { fontSize: 8 },
-            headStyles: { fillColor: [138, 21, 56] } // Brand primary color (#8A1538)
-        });
-        doc.save("reporte de conductores.pdf");
+        autoTable(doc, { head: [tableHeaders], body: tableData, startY: 20, styles: { fontSize: 8 }, headStyles: { fillColor: [22, 163, 74] } });
+        doc.save("peticiones.pdf");
     };
 
     // State for controlling active row action menu (logic only created for UI purposes)
     const [activeMenuId, setActiveMenuId] = useState(null);
-    const [selectedDriver, setSelectedDriver] = useState(null);
+    const [selectedPetition, setSelectedPetition] = useState(null);
 
     // Calculate dynamic "Mostrando X-Y de Z" text
-    const startIndex = totalItems > 0 ? (page - 1) * pageSize + 1 : 0;
+    const startIndex = (page - 1) * pageSize + 1;
     const endIndex = Math.min(page * pageSize, totalItems);
 
     // Dynamic pagination page list generator matching mockup format: [1, 2, 3, ..., 36]
@@ -164,14 +156,14 @@ export default function DriverView() {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-black text-gray-900 tracking-tight">
-                        Gestion de Conductores
+                        Gestion de Peticiones
                     </h1>
                     <p className="text-gray-500 text-sm mt-1">
-                        Administra los conductores registrados
+                        Administra las Peticiones Generadas por los Usuarios
                     </p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div>
                     <button
                         onClick={() => handlePrintPDF()}
                         className="flex items-center gap-2 px-4 py-2.5 bg-white border border-primary text-primary hover:bg-primary-light hover:text-primary transition-all font-bold text-xs tracking-wider rounded-xl cursor-pointer shadow-xs hover:shadow-sm"
@@ -179,41 +171,28 @@ export default function DriverView() {
                         <FileDown className="w-4 h-4 text-primary" />
                         <span>EXPORTA A PDF</span>
                     </button>
-                    <button
-                        onClick={() => alert("Función para añadir conductor en desarrollo")}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-primary border border-transparent text-white hover:bg-primary-hover transition-all font-bold text-xs tracking-wider rounded-xl cursor-pointer shadow-xs hover:shadow-sm"
-                    >
-                        <Plus className="w-4 h-4 text-white" />
-                        <span>AÑADIR CONDUCTOR</span>
-                    </button>
                 </div>
             </div>
 
             {/* Stat Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <StatCard
-                    title="Total de Conductores"
-                    value={stats.totalConductores.toString()}
-                    subtext={null}
+                    title="Solicitudes Pendientes"
+                    value={stats.pendingTotal.toString()}
+                    subtext={`${stats.pendingToday} de ${stats.todayTotal} hechas hoy`}
+                    icon={ClipboardList}
+                />
+                <StatCard
+                    title="Viajes en Curso"
+                    value={stats.enCaminoTotal.toString()}
+                    subtext={`${stats.enCaminoToday} de ${stats.todayTotal} hechas hoy`}
                     icon={Car}
                 />
                 <StatCard
-                    title="Total Activos"
-                    value={stats.activosTotal.toString()}
-                    subtext="Generado una peticion hoy"
-                    icon={CheckCircle}
-                    titleColor="text-emerald-700"
-                    iconBg="bg-emerald-50 border-emerald-100"
-                    iconColor="text-emerald-600"
-                />
-                <StatCard
-                    title="Registrados Hoy"
-                    value={stats.totalToday.toString()}
-                    subtext={null}
-                    icon={User}
-                    titleColor="text-blue-700"
-                    iconBg="bg-blue-50 border-blue-100"
-                    iconColor="text-blue-600"
+                    title="Solicitudes Canceladas"
+                    value={stats.cancelledTotal.toString()}
+                    subtext={`${stats.cancelledToday} de ${stats.todayTotal} hechas hoy`}
+                    icon={XCircle}
                 />
             </div>
 
@@ -230,7 +209,7 @@ export default function DriverView() {
                             type="text"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Buscar por nombre o gerencia..."
+                            placeholder="Buscar por cedula o placa..."
                             className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all placeholder-gray-400 bg-[#F9FAFB]"
                         />
                     </div>
@@ -240,7 +219,7 @@ export default function DriverView() {
                         {/* Sort Dropdown */}
                         <div className="flex items-center gap-2 w-full sm:w-auto">
                             <span className="text-xs font-semibold text-gray-400 whitespace-nowrap">
-                                Orden por:
+                                Ordenado por:
                             </span>
                             <select
                                 value={sortBy}
@@ -249,10 +228,7 @@ export default function DriverView() {
                             >
                                 <option value="fecha_desc">Fecha Descendente</option>
                                 <option value="fecha_asc">Fecha Ascendente</option>
-                                <option value="nombre_asc">Nombre (A-Z)</option>
-                                <option value="nombre_desc">Nombre (Z-A)</option>
-                                <option value="apellido_asc">Apellido (A-Z)</option>
-                                <option value="apellido_desc">Apellido (Z-A)</option>
+                                <option value="pasajero_asc">Pasajero (A-Z)</option>
                             </select>
                         </div>
 
@@ -267,8 +243,10 @@ export default function DriverView() {
                                 className="w-full sm:w-auto text-xs font-bold text-gray-700 bg-white border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-primary cursor-pointer hover:bg-gray-55"
                             >
                                 <option value="all">Todos los Estados</option>
-                                <option value="true">Activos</option>
-                                <option value="false">Inactivos</option>
+                                <option value="En Camino">En Camino</option>
+                                <option value="Pendiente">Pendiente</option>
+                                <option value="Completado">Completado</option>
+                                <option value="Cancelado">Cancelado</option>
                             </select>
                         </div>
                     </div>
@@ -280,7 +258,7 @@ export default function DriverView() {
                         <div className="absolute inset-0 bg-white/70 backdrop-blur-3xs flex items-center justify-center z-10 transition-opacity">
                             <div className="flex flex-col items-center gap-2">
                                 <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-                                <span className="text-xs font-bold text-primary">Cargando conductores...</span>
+                                <span className="text-xs font-bold text-primary">Cargando peticiones...</span>
                             </div>
                         </div>
                     )}
@@ -289,113 +267,116 @@ export default function DriverView() {
                         <thead>
                             <tr className="border-b border-[#F3E8EB] bg-[#FCFCFD]">
                                 <th className="p-4 text-[10px] font-black text-primary tracking-wider uppercase pl-6">
-                                    CONDUCTOR
+                                    Pasajero
                                 </th>
                                 <th className="p-4 text-[10px] font-black text-primary tracking-wider uppercase">
-                                    GERENCIA O DEPARTAMENTO
+                                    Conductor
                                 </th>
                                 <th className="p-4 text-[10px] font-black text-primary tracking-wider uppercase">
-                                    VEHICULO ASIGNADO
+                                    Fecha
                                 </th>
                                 <th className="p-4 text-[10px] font-black text-primary tracking-wider uppercase">
-                                    ESTADO
+                                    Estado
                                 </th>
                                 <th className="p-4 text-[10px] font-black text-primary tracking-wider uppercase">
-                                    FECHA DE CREACION
+                                    Prioridad
                                 </th>
                                 <th className="p-4 text-[10px] font-black text-primary tracking-wider uppercase text-center pr-6">
-                                    ACCIONES
+                                    Acciones
                                 </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[#F3E8EB]">
-                            {drivers.length === 0 ? (
+                            {petitions.length === 0 ? (
                                 <tr>
                                     <td colSpan="6" className="p-8 text-center text-gray-400 text-sm">
-                                        No se encontraron conductores que coincidan con los filtros aplicados.
+                                        No se encontraron peticiones que coincidan con los filtros aplicados.
                                     </td>
                                 </tr>
                             ) : (
-                                drivers.map((item) => (
+                                petitions.map((item) => (
                                     <tr key={item.id} className="hover:bg-[#FCFCFD]/50 transition-colors">
-                                        {/* Driver Info Column */}
+                                        {/* Passenger Column */}
                                         <td className="p-4 pl-6">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-150 shrink-0 bg-gray-55 flex items-center justify-center shadow-xs">
-                                                    {item.foto_url ? (
+                                                <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100 shrink-0 bg-gray-50 flex items-center justify-center">
+                                                    {item.foto_pasajero ? (
                                                         <img
-                                                            src={item.foto_url}
-                                                            alt={`${item.nombre} ${item.apellido}`}
+                                                            src={item.foto_pasajero}
+                                                            alt={item.passengerName}
                                                             className="w-full h-full object-cover"
                                                         />
                                                     ) : (
-                                                        <User className="w-4 h-4 text-gray-400" />
+                                                        <User className="w-5 h-5 text-gray-400" />
                                                     )}
                                                 </div>
                                                 <div>
-                                                    <p className="text-xs font-bold text-gray-900 leading-tight">
-                                                        {item.nombre} {item.apellido}
+                                                    <p className="text-xs font-bold text-gray-800">
+                                                        {item.passengerName}
                                                     </p>
-                                                    <p className="text-[10px] text-gray-450 font-semibold mt-0.5">
-                                                        CI: {item.ci_user}
+                                                    <p className="text-[10px] text-gray-400 font-semibold mt-0.5">
+                                                        Ci: {item.ci_pasajero}
                                                     </p>
                                                 </div>
                                             </div>
                                         </td>
 
-                                        {/* Gerencia Column */}
-                                        <td className="p-4 text-xs font-bold text-gray-800">
-                                            {item.localizacion || "Sin Gerencia"}
-                                        </td>
-
-                                        {/* Vehiculo Info Column */}
-                                        <td className="p-4 pl-6">
-                                            {item.vehiculo_placa ? (
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-lg overflow-hidden border border-gray-150 shrink-0 bg-gray-50 flex items-center justify-center shadow-xs">
-                                                        {item.vehiculo_foto ? (
-                                                            <img
-                                                                src={item.vehiculo_foto}
-                                                                alt={`${item.vehiculo_placa}`}
-                                                                className="w-full h-full object-cover"
-                                                            />
-                                                        ) : (
-                                                            <Car className="w-4 h-4 text-gray-400" />
-                                                        )}
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-xs font-bold text-gray-800">
-                                                            {item.vehiculo_placa}
+                                        {/* Driver Column */}
+                                        <td className="p-4 text-xs">
+                                            {item.driverName ? (
+                                                <div>
+                                                    <p className="font-semibold text-gray-700">
+                                                        {item.driverName}
+                                                    </p>
+                                                    <p className="text-[10px] text-gray-400 font-semibold text-gray-450 mt-0.5">
+                                                        Ci: {item.ci_driver}
+                                                    </p>
+                                                    {item.placa_vehiculo && (
+                                                        <p className="text-[10px] text-gray-400 font-medium mt-0.5">
+                                                            Placa: <span className="font-semibold text-gray-500">{item.placa_vehiculo}</span>
                                                         </p>
-                                                    </div>
+                                                    )}
                                                 </div>
                                             ) : (
                                                 <span className="text-gray-400 font-medium italic text-[11px]">
-                                                    Sin vehículo
+                                                    No asignado
                                                 </span>
                                             )}
                                         </td>
 
-                                        {/* Estado Column */}
+                                        {/* Date Column */}
+                                        <td className="p-4 text-xs font-semibold text-gray-500">
+                                            {item.fecha}
+                                        </td>
+
+                                        {/* Status Column */}
                                         <td className="p-4">
                                             <span
-                                                className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide border ${item.activo === true
-                                                    ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                                                    : "bg-gray-50 text-gray-700 border-gray-150"
+                                                className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide ${item.estado === "Completado"
+                                                    ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                                                    : item.estado === "Pendiente"
+                                                        ? "bg-gray-100 text-gray-600 border border-gray-200/60"
+                                                        : item.estado === "En camino"
+                                                            ? "bg-blue-50 text-blue-700 border border-blue-100"
+                                                            : "bg-red-50 text-red-700 border border-red-100"
                                                     }`}
                                             >
-                                                {item.activo ? "Activo" : "Inactivo"}
+                                                {item.estado}
                                             </span>
                                         </td>
 
-                                        {/* Fecha Column (Date & Time Stacked) */}
-                                        <td className="p-4 text-xs">
-                                            <p className="font-semibold text-gray-700">
-                                                {item.fecha ? item.fecha.split(" ")[0] : ""}
-                                            </p>
-                                            <p className="text-[10px] text-gray-400 font-semibold mt-0.5">
-                                                {item.fecha ? item.fecha.split(" ")[1] : ""}
-                                            </p>
+                                        {/* Priority Column */}
+                                        <td className="p-4">
+                                            <span
+                                                className={`text-[10px] font-extrabold tracking-wider ${item.prioridad === "Alta"
+                                                    ? "text-red-600"
+                                                    : item.prioridad === "Media"
+                                                        ? "text-blue-600"
+                                                        : "text-gray-500"
+                                                    }`}
+                                            >
+                                                {item.prioridad}
+                                            </span>
                                         </td>
 
                                         {/* Actions Column */}
@@ -406,11 +387,12 @@ export default function DriverView() {
                                                         activeMenuId === item.id ? null : item.id
                                                     )
                                                 }
-                                                className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-650 transition-colors cursor-pointer inline-flex items-center justify-center"
+                                                className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors cursor-pointer inline-flex items-center justify-center"
                                             >
                                                 <MoreVertical className="w-4.5 h-4.5" />
                                             </button>
 
+                                            {/* Dropdown Menu (Placeholder layout UI) */}
                                             {activeMenuId === item.id && (
                                                 <>
                                                     <div
@@ -420,7 +402,7 @@ export default function DriverView() {
                                                     <div className="absolute right-6 mt-1 w-36 bg-white border border-gray-100 rounded-xl shadow-lg py-1.5 z-30 animate-fade-in text-left">
                                                         <button
                                                             onClick={() => {
-                                                                setSelectedDriver(item);
+                                                                setSelectedPetition(item);
                                                                 setActiveMenuId(null);
                                                             }}
                                                             className="block w-full px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-primary-light hover:text-primary transition-colors cursor-pointer"
@@ -429,12 +411,21 @@ export default function DriverView() {
                                                         </button>
                                                         <button
                                                             onClick={() => {
-                                                                navigate(`/user-activity/${item.id}`);
+                                                                alert(`Asignar conductor para ${item.id}`);
                                                                 setActiveMenuId(null);
                                                             }}
-                                                            className="block w-full px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-primary-light hover:text-primary transition-colors cursor-pointer border-t border-gray-100"
+                                                            className="block w-full px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-primary-light hover:text-primary transition-colors cursor-pointer"
                                                         >
-                                                            Ver Actividad
+                                                            Asignar Conductor
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                alert(`Cancelar petición ${item.id}`);
+                                                                setActiveMenuId(null);
+                                                            }}
+                                                            className="block w-full px-4 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                                                        >
+                                                            Cancelar Viaje
                                                         </button>
                                                     </div>
                                                 </>
@@ -453,7 +444,7 @@ export default function DriverView() {
                     <div className="text-[11px] font-semibold text-gray-400">
                         {totalItems > 0 ? (
                             <span>
-                                Mostrando {startIndex}–{endIndex} de {totalItems} conductores registrados
+                                Mostrando {startIndex}–{endIndex} de {totalItems} peticiones hechas
                             </span>
                         ) : (
                             <span>No hay registros disponibles</span>
@@ -483,10 +474,10 @@ export default function DriverView() {
                 </div>
             </div>
 
-            {selectedDriver && (
-                <DriverDetails
-                    driver={selectedDriver}
-                    onClose={() => setSelectedDriver(null)}
+            {selectedPetition && (
+                <PetitionDetails
+                    petition={selectedPetition}
+                    onClose={() => setSelectedPetition(null)}
                 />
             )}
         </div>

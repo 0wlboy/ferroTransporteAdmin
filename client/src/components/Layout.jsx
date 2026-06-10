@@ -1,17 +1,21 @@
 import { useState } from "react";
-import { Outlet, useNavigate, useLocation } from "react-router-dom";
+import { Outlet, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import UserProfileModal from "./modals/userProfile";
 
 export default function Layout() {
-    const { logout } = useAuth();
+    const { currentUser, logout } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const [collapsed, setCollapsed] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+    if (!currentUser) {
+        return <Navigate to="/" replace />;
+    }
 
     const handleLogout = async () => {
         try {

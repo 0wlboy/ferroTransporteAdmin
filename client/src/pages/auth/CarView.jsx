@@ -1,25 +1,26 @@
-import React, { useState } from "react";
-import { usePaginatePetitions } from "../hooks/usePaginatePetitions";
-import StatCard from "../components/StatCard";
-import PetitionDetails from "../components/modals/PetitionDetails";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { usePaginateVehicles } from "../../hooks/usePaginateVehicles";
+import StatCard from "../../components/cards/StatCard";
 import {
     Search,
     FileDown,
     MoreVertical,
     ChevronLeft,
     ChevronRight,
-    ClipboardList,
     Car,
-    XCircle,
     User,
+    Plus,
+    Wrench,
+    CheckCircle
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-
-export default function PetitionsView() {
+export default function CarView() {
+    const navigate = useNavigate();
     const {
-        data: petitions,
+        data: vehicles,
         loading,
         page,
         totalPages,
@@ -35,37 +36,43 @@ export default function PetitionsView() {
         prevPage,
         setPage,
         stats,
-    } = usePaginatePetitions({ initialPageSize: 4 });
+    } = usePaginateVehicles({ initialPageSize: 4 });
 
     const handlePrintPDF = () => {
         const doc = new jsPDF();
-        doc.text("Reporte de Peticiones", 80, 10);
+        doc.text("Reporte de Vehículos", 80, 10);
         doc.text("Fecha: " + new Date().toLocaleDateString(), 80, 15);
 
         // Formatear datos para autotable
-        const tableData = petitions.map(p => [
-            p.id,
-            p.ci_pasajero,
-            p.ci_driver,
-            p.origen_nombre,
-            p.destino_nombre,
-            p.estado,
-            p.fecha,
-            p.prioridad,
+        const tableData = vehicles.map(v => [
+            v.id,
+            v.marca,
+            v.modelo,
+            v.año,
+            v.placa,
+            v.num_asientos,
+            v.maletero_amplio ? "Sí" : "No",
+            v.driverName,
+            v.estado
         ]);
 
-        const tableHeaders = ["ID", "CI Pasajero", "CI Conductor", "Origen", "Destino", "Estado", "Fecha", "Prioridad"];
+        const tableHeaders = ["ID", "Marca", "Modelo", "Año", "Placa", "Asientos", "Maletero Amplio", "Conductor", "Estado"];
 
-        autoTable(doc, { head: [tableHeaders], body: tableData, startY: 20, styles: { fontSize: 8 }, headStyles: { fillColor: [22, 163, 74] } });
-        doc.save("peticiones.pdf");
+        autoTable(doc, {
+            head: [tableHeaders],
+            body: tableData,
+            startY: 20,
+            styles: { fontSize: 8 },
+            headStyles: { fillColor: [138, 21, 56] } // Brand primary color (#8A1538)
+        });
+        doc.save("reporte de vehiculos.pdf");
     };
 
     // State for controlling active row action menu (logic only created for UI purposes)
     const [activeMenuId, setActiveMenuId] = useState(null);
-    const [selectedPetition, setSelectedPetition] = useState(null);
 
     // Calculate dynamic "Mostrando X-Y de Z" text
-    const startIndex = (page - 1) * pageSize + 1;
+    const startIndex = totalItems > 0 ? (page - 1) * pageSize + 1 : 0;
     const endIndex = Math.min(page * pageSize, totalItems);
 
     // Dynamic pagination page list generator matching mockup format: [1, 2, 3, ..., 36]
@@ -156,14 +163,14 @@ export default function PetitionsView() {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-black text-gray-900 tracking-tight">
-                        Gestion de Peticiones
+                        Gestion de Vehiculos
                     </h1>
                     <p className="text-gray-500 text-sm mt-1">
-                        Administra las Peticiones Generadas por los Usuarios
+                        Administra los vehiculos registrados
                     </p>
                 </div>
 
-                <div>
+                <div className="flex items-center gap-3">
                     <button
                         onClick={() => handlePrintPDF()}
                         className="flex items-center gap-2 px-4 py-2.5 bg-white border border-primary text-primary hover:bg-primary-light hover:text-primary transition-all font-bold text-xs tracking-wider rounded-xl cursor-pointer shadow-xs hover:shadow-sm"
@@ -171,28 +178,41 @@ export default function PetitionsView() {
                         <FileDown className="w-4 h-4 text-primary" />
                         <span>EXPORTA A PDF</span>
                     </button>
+                    <button
+                        onClick={() => alert("Función para añadir localización o vehículo en desarrollo")}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-primary border border-transparent text-white hover:bg-primary-hover transition-all font-bold text-xs tracking-wider rounded-xl cursor-pointer shadow-xs hover:shadow-sm"
+                    >
+                        <Plus className="w-4 h-4 text-white" />
+                        <span>AÑADIR LOCALIZACIÓN</span>
+                    </button>
                 </div>
             </div>
 
             {/* Stat Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <StatCard
-                    title="Solicitudes Pendientes"
-                    value={stats.pendingTotal.toString()}
-                    subtext={`${stats.pendingToday} de ${stats.todayTotal} hechas hoy`}
-                    icon={ClipboardList}
-                />
-                <StatCard
-                    title="Viajes en Curso"
-                    value={stats.enCaminoTotal.toString()}
-                    subtext={`${stats.enCaminoToday} de ${stats.todayTotal} hechas hoy`}
+                    title="Total Flota"
+                    value={stats.totalFlota.toString()}
+                    subtext={`+${stats.totalThisMonth} este mes`}
                     icon={Car}
                 />
                 <StatCard
-                    title="Solicitudes Canceladas"
-                    value={stats.cancelledTotal.toString()}
-                    subtext={`${stats.cancelledToday} de ${stats.todayTotal} hechas hoy`}
-                    icon={XCircle}
+                    title="Activos"
+                    value={stats.operativosTotal.toString()}
+                    subtext={`${stats.totalFlota > 0 ? Math.round((stats.operativosTotal / stats.totalFlota) * 100) : 0}% disponibilidad`}
+                    icon={CheckCircle}
+                    titleColor="text-emerald-700"
+                    iconBg="bg-emerald-50 border-emerald-100"
+                    iconColor="text-emerald-600"
+                />
+                <StatCard
+                    title="En Taller"
+                    value={stats.mantenimientoTotal.toString()}
+                    subtext={`${stats.mantenimientoToday} programados hoy`}
+                    icon={Wrench}
+                    titleColor="text-amber-700"
+                    iconBg="bg-amber-50 border-amber-100"
+                    iconColor="text-amber-600"
                 />
             </div>
 
@@ -209,7 +229,7 @@ export default function PetitionsView() {
                             type="text"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Buscar por cedula o placa..."
+                            placeholder="Buscar por nombre o placa..."
                             className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all placeholder-gray-400 bg-[#F9FAFB]"
                         />
                     </div>
@@ -228,7 +248,8 @@ export default function PetitionsView() {
                             >
                                 <option value="fecha_desc">Fecha Descendente</option>
                                 <option value="fecha_asc">Fecha Ascendente</option>
-                                <option value="pasajero_asc">Pasajero (A-Z)</option>
+                                <option value="placa_asc">Placa (A-Z)</option>
+                                <option value="placa_desc">Placa (Z-A)</option>
                             </select>
                         </div>
 
@@ -243,10 +264,9 @@ export default function PetitionsView() {
                                 className="w-full sm:w-auto text-xs font-bold text-gray-700 bg-white border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-primary cursor-pointer hover:bg-gray-55"
                             >
                                 <option value="all">Todos los Estados</option>
-                                <option value="En Camino">En Camino</option>
-                                <option value="Pendiente">Pendiente</option>
-                                <option value="Completado">Completado</option>
-                                <option value="Cancelado">Cancelado</option>
+                                <option value="Operativo">Operativo</option>
+                                <option value="Inoperativo">Inoperativo</option>
+                                <option value="Mantenimiento">Mantenimiento</option>
                             </select>
                         </div>
                     </div>
@@ -258,7 +278,7 @@ export default function PetitionsView() {
                         <div className="absolute inset-0 bg-white/70 backdrop-blur-3xs flex items-center justify-center z-10 transition-opacity">
                             <div className="flex flex-col items-center gap-2">
                                 <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-                                <span className="text-xs font-bold text-primary">Cargando peticiones...</span>
+                                <span className="text-xs font-bold text-primary">Cargando vehículos...</span>
                             </div>
                         </div>
                     )}
@@ -267,119 +287,106 @@ export default function PetitionsView() {
                         <thead>
                             <tr className="border-b border-[#F3E8EB] bg-[#FCFCFD]">
                                 <th className="p-4 text-[10px] font-black text-primary tracking-wider uppercase pl-6">
-                                    Pasajero
+                                    VEHICULO
                                 </th>
                                 <th className="p-4 text-[10px] font-black text-primary tracking-wider uppercase">
-                                    Conductor
+                                    PLACA
                                 </th>
                                 <th className="p-4 text-[10px] font-black text-primary tracking-wider uppercase">
-                                    Fecha
+                                    CONDUCTOR
                                 </th>
                                 <th className="p-4 text-[10px] font-black text-primary tracking-wider uppercase">
-                                    Estado
-                                </th>
-                                <th className="p-4 text-[10px] font-black text-primary tracking-wider uppercase">
-                                    Prioridad
+                                    ESTADO
                                 </th>
                                 <th className="p-4 text-[10px] font-black text-primary tracking-wider uppercase text-center pr-6">
-                                    Acciones
+                                    ACCIONES
                                 </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[#F3E8EB]">
-                            {petitions.length === 0 ? (
+                            {vehicles.length === 0 ? (
                                 <tr>
-                                    <td colSpan="6" className="p-8 text-center text-gray-400 text-sm">
-                                        No se encontraron peticiones que coincidan con los filtros aplicados.
+                                    <td colSpan="5" className="p-8 text-center text-gray-400 text-sm">
+                                        No se encontraron vehículos que coincidan con los filtros aplicados.
                                     </td>
                                 </tr>
                             ) : (
-                                petitions.map((item) => (
+                                vehicles.map((item) => (
                                     <tr key={item.id} className="hover:bg-[#FCFCFD]/50 transition-colors">
-                                        {/* Passenger Column */}
+                                        {/* Vehicle Info Column */}
                                         <td className="p-4 pl-6">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100 shrink-0 bg-gray-50 flex items-center justify-center">
-                                                    {item.foto_pasajero ? (
+                                                <div className="w-12 h-12 rounded-lg overflow-hidden border border-gray-150 shrink-0 bg-gray-50 flex items-center justify-center">
+                                                    {item.foto_vehiculo ? (
                                                         <img
-                                                            src={item.foto_pasajero}
-                                                            alt={item.passengerName}
+                                                            src={item.foto_vehiculo}
+                                                            alt={`${item.marca} ${item.modelo}`}
                                                             className="w-full h-full object-cover"
                                                         />
                                                     ) : (
-                                                        <User className="w-5 h-5 text-gray-400" />
+                                                        <Car className="w-6 h-6 text-gray-400" />
                                                     )}
                                                 </div>
                                                 <div>
-                                                    <p className="text-xs font-bold text-gray-800">
-                                                        {item.passengerName}
+                                                    <p className="text-xs font-bold text-gray-900 leading-tight">
+                                                        {item.marca} {item.modelo}
                                                     </p>
-                                                    <p className="text-[10px] text-gray-400 font-semibold mt-0.5">
-                                                        Ci: {item.ci_pasajero}
+                                                    <p className="text-[10px] text-gray-400 font-medium mt-0.5">
+                                                        Año: {item.año}
                                                     </p>
                                                 </div>
                                             </div>
                                         </td>
 
-                                        {/* Driver Column */}
+                                        {/* License Plate Badge Column */}
+                                        <td className="p-4">
+                                            <span className="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-bold font-mono bg-[#F9FAFB] border border-[#F3E8EB] text-gray-800 tracking-wider">
+                                                {item.placa}
+                                            </span>
+                                        </td>
+
+                                        {/* Driver Info Column */}
                                         <td className="p-4 text-xs">
-                                            {item.driverName ? (
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-100 shrink-0 bg-gray-50 flex items-center justify-center">
+                                                    {item.ci_driver && item.foto_driver ? (
+                                                        <img
+                                                            src={item.foto_driver}
+                                                            alt={item.driverName}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <User className="w-4 h-4 text-gray-400" />
+                                                    )}
+                                                </div>
                                                 <div>
-                                                    <p className="font-semibold text-gray-700">
-                                                        {item.driverName}
+                                                    <p className="text-xs font-bold text-gray-800">
+                                                        {item.ci_driver ? item.driverName : "Por Asignar"}
                                                     </p>
-                                                    <p className="text-[10px] text-gray-400 font-semibold text-gray-450 mt-0.5">
-                                                        Ci: {item.ci_driver}
-                                                    </p>
-                                                    {item.placa_vehiculo && (
-                                                        <p className="text-[10px] text-gray-400 font-medium mt-0.5">
-                                                            Placa: <span className="font-semibold text-gray-500">{item.placa_vehiculo}</span>
+                                                    {item.ci_driver && (
+                                                        <p className="text-[9px] text-gray-400 font-semibold mt-0.5">
+                                                            CI: {item.ci_driver}
                                                         </p>
                                                     )}
                                                 </div>
-                                            ) : (
-                                                <span className="text-gray-400 font-medium italic text-[11px]">
-                                                    No asignado
-                                                </span>
-                                            )}
+                                            </div>
                                         </td>
 
-                                        {/* Date Column */}
-                                        <td className="p-4 text-xs font-semibold text-gray-500">
-                                            {item.fecha}
-                                        </td>
-
-                                        {/* Status Column */}
+                                        {/* Status Badge Column */}
                                         <td className="p-4">
                                             <span
-                                                className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide ${item.estado === "Completado"
-                                                    ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
-                                                    : item.estado === "Pendiente"
-                                                        ? "bg-gray-100 text-gray-600 border border-gray-200/60"
-                                                        : item.estado === "En camino"
-                                                            ? "bg-blue-50 text-blue-700 border border-blue-100"
-                                                            : "bg-red-50 text-red-700 border border-red-100"
+                                                className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide border ${item.estado === "Operativo"
+                                                    ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                                                    : item.estado === "Mantenimiento"
+                                                        ? "bg-amber-50 text-amber-700 border-amber-100"
+                                                        : "bg-red-50 text-red-700 border-red-100"
                                                     }`}
                                             >
                                                 {item.estado}
                                             </span>
                                         </td>
 
-                                        {/* Priority Column */}
-                                        <td className="p-4">
-                                            <span
-                                                className={`text-[10px] font-extrabold tracking-wider ${item.prioridad === "Alta"
-                                                    ? "text-red-600"
-                                                    : item.prioridad === "Media"
-                                                        ? "text-blue-600"
-                                                        : "text-gray-500"
-                                                    }`}
-                                            >
-                                                {item.prioridad}
-                                            </span>
-                                        </td>
-
-                                        {/* Actions Column */}
+                                        {/* Actions Button & Menu */}
                                         <td className="p-4 text-center pr-6 relative">
                                             <button
                                                 onClick={() =>
@@ -387,12 +394,11 @@ export default function PetitionsView() {
                                                         activeMenuId === item.id ? null : item.id
                                                     )
                                                 }
-                                                className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors cursor-pointer inline-flex items-center justify-center"
+                                                className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-650 transition-colors cursor-pointer inline-flex items-center justify-center"
                                             >
                                                 <MoreVertical className="w-4.5 h-4.5" />
                                             </button>
 
-                                            {/* Dropdown Menu (Placeholder layout UI) */}
                                             {activeMenuId === item.id && (
                                                 <>
                                                     <div
@@ -402,30 +408,12 @@ export default function PetitionsView() {
                                                     <div className="absolute right-6 mt-1 w-36 bg-white border border-gray-100 rounded-xl shadow-lg py-1.5 z-30 animate-fade-in text-left">
                                                         <button
                                                             onClick={() => {
-                                                                setSelectedPetition(item);
+                                                                navigate(`/car-activity/${item.id}`);
                                                                 setActiveMenuId(null);
                                                             }}
                                                             className="block w-full px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-primary-light hover:text-primary transition-colors cursor-pointer"
                                                         >
-                                                            Ver Detalle
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                alert(`Asignar conductor para ${item.id}`);
-                                                                setActiveMenuId(null);
-                                                            }}
-                                                            className="block w-full px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-primary-light hover:text-primary transition-colors cursor-pointer"
-                                                        >
-                                                            Asignar Conductor
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                alert(`Cancelar petición ${item.id}`);
-                                                                setActiveMenuId(null);
-                                                            }}
-                                                            className="block w-full px-4 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-                                                        >
-                                                            Cancelar Viaje
+                                                            Ver Actividad
                                                         </button>
                                                     </div>
                                                 </>
@@ -444,7 +432,7 @@ export default function PetitionsView() {
                     <div className="text-[11px] font-semibold text-gray-400">
                         {totalItems > 0 ? (
                             <span>
-                                Mostrando {startIndex}–{endIndex} de {totalItems} peticiones hechas
+                                Mostrando {startIndex}–{endIndex} de {totalItems} vehículos registrados
                             </span>
                         ) : (
                             <span>No hay registros disponibles</span>
@@ -473,13 +461,6 @@ export default function PetitionsView() {
                     </div>
                 </div>
             </div>
-
-            {selectedPetition && (
-                <PetitionDetails 
-                    petition={selectedPetition} 
-                    onClose={() => setSelectedPetition(null)} 
-                />
-            )}
         </div>
     );
 }

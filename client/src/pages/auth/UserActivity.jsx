@@ -1,5 +1,5 @@
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
-import useGetUserActivity from "../hooks/useGetUserActivity";
+import useGetUserActivity from "../../hooks/useGetUserActivity";
 import { 
     Search, 
     FileDown, 
