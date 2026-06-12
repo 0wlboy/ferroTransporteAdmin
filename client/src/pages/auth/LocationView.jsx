@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import useGetLocations from "../../hooks/useGetLocations";
 import { LocationCard } from "../../components/cards/LocationCard";
 import DataList from "../../components/UI/DataList";
@@ -7,7 +8,9 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 export default function LocationView() {
+    const navigate = useNavigate();
     const { locations } = useGetLocations();
+
     const [searchTerm, setSearchTerm] = useState("");
 
     const filteredLocations = locations.filter((loc) =>
@@ -70,7 +73,7 @@ export default function LocationView() {
                         <span>EXPORTA A PDF</span>
                     </button>
                     <button
-                        onClick={() => alert("Función para añadir localización en desarrollo")}
+                        onClick={() => navigate("/add-location")}
                         className="flex items-center gap-2 px-4 py-2.5 bg-primary border border-transparent text-white hover:bg-primary-hover transition-all font-bold text-xs tracking-wider rounded-xl cursor-pointer shadow-xs hover:shadow-sm"
                     >
                         <Plus className="w-4 h-4 text-white" />

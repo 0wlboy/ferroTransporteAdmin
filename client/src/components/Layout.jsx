@@ -51,6 +51,9 @@ export default function Layout() {
             case "/add-driver":
             case "/add-car":
                 return "Dashboard";
+            case "/add-location":
+                return "Añadir Localizaciones";
+
             default:
                 return "Panel de Administración";
         }
