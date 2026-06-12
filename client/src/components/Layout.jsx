@@ -47,6 +47,10 @@ export default function Layout() {
                 return "Localizaciones";
             case "/home-view":
                 return "Home";
+            case "/add-passenger":
+            case "/add-driver":
+            case "/add-car":
+                return "Dashboard";
             default:
                 return "Panel de Administración";
         }

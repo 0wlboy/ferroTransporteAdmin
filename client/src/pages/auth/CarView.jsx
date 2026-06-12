@@ -75,7 +75,7 @@ export default function CarView() {
             label: "VEHICULO",
             render: (item) => (
                 <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-lg overflow-hidden border border-gray-150 shrink-0 bg-gray-50 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-lg overflow-hidden border border-gray-150 shrink-0 bg-gray-50 flex items-center justify-center border-[#8A1538]">
                         {item.foto_vehiculo ? (
                             <img
                                 src={item.foto_vehiculo}
@@ -137,13 +137,12 @@ export default function CarView() {
             label: "ESTADO",
             render: (item) => (
                 <span
-                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide border ${
-                        item.estado === "Operativo"
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                            : item.estado === "Mantenimiento"
+                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide border ${item.estado === "Operativo"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                        : item.estado === "Mantenimiento"
                             ? "bg-amber-50 text-amber-700 border-amber-100"
                             : "bg-red-50 text-red-700 border-red-100"
-                    }`}
+                        }`}
                 >
                     {item.estado}
                 </span>
@@ -211,11 +210,11 @@ export default function CarView() {
                         <span>EXPORTA A PDF</span>
                     </button>
                     <button
-                        onClick={() => alert("Función para añadir localización o vehículo en desarrollo")}
+                        onClick={() => navigate("/add-car")}
                         className="flex items-center gap-2 px-4 py-2.5 bg-primary border border-transparent text-white hover:bg-primary-hover transition-all font-bold text-xs tracking-wider rounded-xl cursor-pointer shadow-xs hover:shadow-sm"
                     >
                         <Plus className="w-4 h-4 text-white" />
-                        <span>AÑADIR LOCALIZACIÓN</span>
+                        <span>AÑADIR VEHÍCULO</span>
                     </button>
                 </div>
             </div>

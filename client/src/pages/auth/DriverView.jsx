@@ -223,7 +223,7 @@ export default function DriverView() {
                         <span>EXPORTA A PDF</span>
                     </button>
                     <button
-                        onClick={() => alert("Función para añadir conductor en desarrollo")}
+                        onClick={() => navigate("/add-driver")}
                         className="flex items-center gap-2 px-4 py-2.5 bg-primary border border-transparent text-white hover:bg-primary-hover transition-all font-bold text-xs tracking-wider rounded-xl cursor-pointer shadow-xs hover:shadow-sm"
                     >
                         <Plus className="w-4 h-4 text-white" />

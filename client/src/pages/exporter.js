@@ -9,3 +9,6 @@ export { default as UserActivity } from "./auth/UserActivity";
 export { default as CarActivity } from "./auth/CarActivity";
 export { default as CarView } from "./auth/CarView";
 export { default as Home } from "./auth/Home";
+export { default as AddPassenger } from "./auth/AddPassenger";
+export { default as AddCar } from "./auth/AddCar";
+export { default as AddDriver } from "./auth/AddDriver";

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import Input from "../../components/inputs/Input";
 import ImagePicker from "../../components/inputs/ImgPicker";
+import { User } from "lucide-react"
 
 export default function Register() {
     const navigate = useNavigate();
@@ -178,6 +179,7 @@ export default function Register() {
                     <p className="text-gray-500 text-sm mt-1 mb-4">Regístrate como administrador en la plataforma</p>
 
                     <ImagePicker
+                        icon={User}
                         bucketName="fotosPerfil"
                         placeholderType="user"
                         onFileSelect={setAvatarFile}
