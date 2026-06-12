@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Outlet, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import Sidebar from "./Sidebar";
-import Header from "./Header";
+import Sidebar from "./UI/Sidebar";
+import Header from "./UI/Header";
 import UserProfileModal from "./modals/UserProfile";
 
 export default function Layout() {

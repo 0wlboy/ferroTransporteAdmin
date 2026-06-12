@@ -1,11 +1,9 @@
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import useGetCarActivity from "../../hooks/useGetCarActivity";
+import DataList from "../../components/UI/DataList";
 import {
-    Search,
     FileDown,
     MoreVertical,
-    ChevronLeft,
-    ChevronRight,
     Car,
     User,
     X,
@@ -37,8 +35,6 @@ export default function CarActivity() {
         setSortBy,
         totalPages,
         totalItems,
-        startIndex,
-        endIndex,
         paginatedPetitions,
         vehicleTotalTrips,
         vehicleCancelledTrips,
@@ -56,13 +52,14 @@ export default function CarActivity() {
 
         const tableData = sortedPetitions.map(p => [
             p.id,
-            p.passengerName,
+            p.ci_pasajero,
+            p.ci_driver,
             p.destino_nombre,
             p.fecha,
             p.estado
         ]);
 
-        const tableHeaders = ["ID", "Pasajero", "Destino", "Fecha/Hora", "Estado"];
+        const tableHeaders = ["ID", "CI Pasajero", "CI Conductor", "Destino", "Fecha/Hora", "Estado"];
 
         autoTable(doc, {
             head: [tableHeaders],
@@ -103,82 +100,109 @@ export default function CarActivity() {
         );
     }
 
-    // Page rendering for page buttons [1, 2, 3...]
-    const renderPageNumbers = () => {
-        const pages = [];
-        if (totalPages <= 5) {
-            for (let i = 1; i <= totalPages; i++) {
-                pages.push(
-                    <button
-                        key={i}
-                        onClick={() => setPage(i)}
-                        className={`w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${page === i
-                            ? "bg-primary text-white shadow-md shadow-primary/20"
-                            : "bg-white text-gray-500 hover:bg-gray-100 hover:text-primary border border-gray-100"
-                            }`}
-                    >
-                        {i}
-                    </button>
-                );
-            }
-            return pages;
-        }
-
-        // Ellipsis pagination
-        pages.push(
-            <button
-                key={1}
-                onClick={() => setPage(1)}
-                className={`w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${page === 1
-                    ? "bg-primary text-white shadow-md"
-                    : "bg-white text-gray-500 hover:bg-gray-100 border border-gray-100"
-                    }`}
-            >
-                1
-            </button>
-        );
-
-        if (page > 3) {
-            pages.push(<span key="el1" className="text-gray-400 text-xs px-1">...</span>);
-        }
-
-        const start = Math.max(2, page - 1);
-        const end = Math.min(totalPages - 1, page + 1);
-        for (let i = start; i <= end; i++) {
-            if (i === 1 || i === totalPages) continue;
-            pages.push(
+    // Columns configuration for DataList table
+    const headers = [
+        {
+            label: "PASAJERO",
+            render: (item) => (
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-150 shrink-0 bg-gray-55 flex items-center justify-center shadow-xs">
+                        {item.foto_pasajero ? (
+                            <img
+                                src={item.foto_pasajero}
+                                alt={item.passengerName}
+                                className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            <User className="w-4 h-4 text-gray-400" />
+                        )}
+                    </div>
+                    <div>
+                        <p className="text-xs font-bold text-gray-900 leading-tight">
+                            {item.passengerName}
+                        </p>
+                        <p className="text-[10px] text-gray-450 font-semibold mt-0.5">
+                            Pasajeros: {item.num_acompañantes + 1}
+                        </p>
+                    </div>
+                </div>
+            )
+        },
+        {
+            label: "DESTINO",
+            render: (item) => (
+                <span className="text-xs font-extrabold text-primary">
+                    {item.destino_nombre}
+                </span>
+            )
+        },
+        {
+            label: "CONDUCTOR ASIGNADO",
+            render: (item) => (
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-150 shrink-0 bg-gray-55 flex items-center justify-center shadow-xs">
+                        {item.foto_driver ? (
+                            <img
+                                src={item.foto_driver}
+                                alt={item.driverName}
+                                className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            <User className="w-4 h-4 text-gray-400" />
+                        )}
+                    </div>
+                    <div>
+                        <p className="text-xs font-bold text-gray-900 leading-tight">
+                            {item.driverName}
+                        </p>
+                        <p className="text-[10px] text-gray-450 font-semibold mt-0.5">
+                            CI: {item.ci_driver}
+                        </p>
+                    </div>
+                </div>
+            )
+        },
+        {
+            label: "FECHA",
+            render: (item) => (
+                <div className="text-xs">
+                    <p className="font-semibold text-gray-755">
+                        {item.fecha ? item.fecha.split(" ")[0] : ""}
+                    </p>
+                    <p className="text-[10px] text-gray-450 font-semibold mt-0.5">
+                        {item.fecha ? item.fecha.slice(11) : ""}
+                    </p>
+                </div>
+            )
+        },
+        {
+            label: "ESTADO",
+            render: (item) => (
+                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide border ${item.estado?.toLowerCase() === "completado" || item.estado?.toLowerCase() === "completada"
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                    : item.estado?.toLowerCase() === "pendiente"
+                        ? "bg-amber-50 text-amber-700 border-amber-100 animate-pulse"
+                        : item.estado?.toLowerCase() === "en camino" || item.estado?.toLowerCase() === "en viaje"
+                            ? "bg-blue-50 text-blue-700 border-blue-100"
+                            : "bg-red-50 text-red-700 border-red-100"
+                    }`}>
+                    {item.estado?.toUpperCase()}
+                </span>
+            )
+        },
+        /*{
+            label: "ACCIONES",
+            className: "text-center pr-6",
+            render: (item) => (
                 <button
-                    key={i}
-                    onClick={() => setPage(i)}
-                    className={`w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${page === i
-                        ? "bg-primary text-white shadow-md"
-                        : "bg-white text-gray-500 hover:bg-gray-100 border border-gray-100"
-                        }`}
+                    onClick={() => alert(`Acción sobre petición ID: ${item.id}`)}
+                    className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-655 transition-colors cursor-pointer inline-flex items-center justify-center"
                 >
-                    {i}
+                    <MoreVertical className="w-4.5 h-4.5" />
                 </button>
-            );
-        }
-
-        if (page < totalPages - 2) {
-            pages.push(<span key="el2" className="text-gray-400 text-xs px-1">...</span>);
-        }
-
-        pages.push(
-            <button
-                key={totalPages}
-                onClick={() => setPage(totalPages)}
-                className={`w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${page === totalPages
-                    ? "bg-primary text-white shadow-md"
-                    : "bg-white text-gray-500 hover:bg-gray-100 border border-gray-100"
-                    }`}
-            >
-                {totalPages}
-            </button>
-        );
-
-        return pages;
-    };
+            )
+        }*/
+    ];
 
     return (
         <div className="space-y-8 animate-fade-in select-none">
@@ -290,205 +314,62 @@ export default function CarActivity() {
                     </div>
                     <div className="mt-4">
                         <h3 className="text-4xl font-black text-gray-950 leading-none">{vehicleCancelledTrips}</h3>
-                        <p className="text-[10px] text-red-650 font-bold mt-1.5 leading-normal bg-red-50/50 py-0.5 px-1.5 rounded-md border border-red-100/30 inline-block">
+                        <p className="text-[10px] text-red-655 font-bold mt-1.5 leading-normal bg-red-50/50 py-0.5 px-1.5 rounded-md border border-red-100/30 inline-block">
                             De {globalStats.cancelledToday} hechas hoy
                         </p>
                     </div>
                 </div>
             </div>
 
-            {/* Filter and Search Bar Section */}
-            <div className="bg-white rounded-2xl border border-[#F3E8EB] p-5 shadow-xs flex flex-col md:flex-row gap-4 items-center justify-between">
-
-                {/* Search Input */}
-                <div className="relative w-full md:max-w-md">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-400" />
-                    <input
-                        type="text"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Buscar por pasajero o destino..."
-                        className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all placeholder-gray-400 bg-[#F9FAFB]"
-                    />
-                </div>
-
-                {/* Sorting and Filter dropdowns */}
-                <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-gray-500 shrink-0">Ordenado por:</span>
-                        <select
-                            value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value)}
-                            className="bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold text-gray-700 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/10 transition-all cursor-pointer"
-                        >
-                            <option value="fecha_asc">Fecha Ascendente</option>
-                            <option value="fecha_desc">Fecha Descendente</option>
-                        </select>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-gray-500 shrink-0">Filtrar por:</span>
-                        <select
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            className="bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold text-gray-700 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/10 transition-all cursor-pointer"
-                        >
-                            <option value="all">Todos los Estados</option>
-                            <option value="Pendiente">Pendiente</option>
-                            <option value="En Camino">En Camino</option>
-                            <option value="En viaje">En Viaje</option>
-                            <option value="Completado">Completado</option>
-                            <option value="Cancelado">Cancelado</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            {/* Activity Table */}
-            <div className="bg-white rounded-2xl border border-[#F3E8EB] overflow-hidden shadow-xs">
-                <div className="overflow-x-auto">
-                    <table className="w-full border-collapse text-left">
-                        <thead>
-                            <tr className="bg-[#FCFCFD] border-b border-[#F3E8EB] select-none">
-                                <th className="p-4 pl-6 text-[10px] font-black text-primary tracking-wider uppercase">
-                                    PASAJERO
-                                </th>
-                                <th className="p-4 text-[10px] font-black text-primary tracking-wider uppercase">
-                                    DESTINO
-                                </th>
-                                <th className="p-4 text-[10px] font-black text-primary tracking-wider uppercase">
-                                    FECHA
-                                </th>
-                                <th className="p-4 text-[10px] font-black text-primary tracking-wider uppercase">
-                                    ESTADO
-                                </th>
-                                <th className="p-4 text-[10px] font-black text-primary tracking-wider uppercase text-center pr-6">
-                                    ACCIONES
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#F3E8EB]">
-                            {loadingPetitions ? (
-                                <tr>
-                                    <td colSpan="5" className="p-8 text-center text-gray-400 text-sm">
-                                        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                                        Cargando peticiones...
-                                    </td>
-                                </tr>
-                            ) : paginatedPetitions.length === 0 ? (
-                                <tr>
-                                    <td colSpan="5" className="p-8 text-center text-gray-400 text-sm">
-                                        No se encontraron actividades registradas.
-                                    </td>
-                                </tr>
-                            ) : (
-                                paginatedPetitions.map((item) => (
-                                    <tr key={item.id} className="hover:bg-[#FCFCFD]/50 transition-colors">
-
-                                        {/* Pasajero Column */}
-                                        <td className="p-4 pl-6">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-150 shrink-0 bg-gray-55 flex items-center justify-center shadow-xs">
-                                                    {item.foto_pasajero ? (
-                                                        <img
-                                                            src={item.foto_pasajero}
-                                                            alt={item.passengerName}
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                    ) : (
-                                                        <User className="w-4 h-4 text-gray-400" />
-                                                    )}
-                                                </div>
-                                                <div>
-                                                    <p className="text-xs font-bold text-gray-900 leading-tight">
-                                                        {item.passengerName}
-                                                    </p>
-                                                    <p className="text-[10px] text-gray-450 font-semibold mt-0.5">
-                                                        Pasajeros: {item.num_acompañantes + 1}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </td>
-
-                                        {/* Destino Column */}
-                                        <td className="p-4 text-xs font-extrabold text-primary">
-                                            {item.destino_nombre}
-                                        </td>
-
-                                        {/* Fecha Column */}
-                                        <td className="p-4 text-xs">
-                                            <p className="font-semibold text-gray-750">
-                                                {item.fecha ? item.fecha.split(" ")[0] : ""}
-                                            </p>
-                                            <p className="text-[10px] text-gray-450 font-semibold mt-0.5">
-                                                {item.fecha ? item.fecha.slice(11) : ""}
-                                            </p>
-                                        </td>
-
-                                        {/* Estado Column */}
-                                        <td className="p-4">
-                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide border ${item.estado?.toLowerCase() === "completado" || item.estado?.toLowerCase() === "completada"
-                                                    ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                                                    : item.estado?.toLowerCase() === "pendiente"
-                                                        ? "bg-amber-50 text-amber-700 border-amber-100 animate-pulse"
-                                                        : item.estado?.toLowerCase() === "en camino" || item.estado?.toLowerCase() === "en viaje"
-                                                            ? "bg-blue-50 text-blue-700 border-blue-100"
-                                                            : "bg-red-50 text-red-700 border-red-100"
-                                                }`}>
-                                                {item.estado?.toUpperCase()}
-                                            </span>
-                                        </td>
-
-                                        {/* Acciones Column */}
-                                        <td className="p-4 text-center pr-6 relative">
-                                            <button
-                                                onClick={() => alert(`Acción sobre petición ID: ${item.id}`)}
-                                                className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-650 transition-colors cursor-pointer inline-flex items-center justify-center"
-                                            >
-                                                <MoreVertical className="w-4.5 h-4.5" />
-                                            </button>
-                                        </td>
-
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Footer and Pagination Controls */}
-                <div className="p-4 border-t border-[#F3E8EB] bg-[#FCFCFD] flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div className="text-[11px] font-semibold text-gray-400">
-                        {totalItems > 0 ? (
-                            <span>
-                                Mostrando {startIndex}–{endIndex} de {totalItems} peticiones hechas
-                            </span>
-                        ) : (
-                            <span>No hay registros disponibles</span>
-                        )}
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                        <button
-                            onClick={() => setPage(p => Math.max(1, p - 1))}
-                            disabled={page === 1}
-                            className="w-8 h-8 rounded-lg flex items-center justify-center border border-gray-100 bg-white text-gray-500 hover:bg-gray-150 disabled:opacity-40 disabled:hover:bg-white cursor-pointer transition-colors"
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                        </button>
-
-                        {renderPageNumbers()}
-
-                        <button
-                            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                            disabled={page === totalPages}
-                            className="w-8 h-8 rounded-lg flex items-center justify-center border border-gray-100 bg-white text-gray-500 hover:bg-gray-150 disabled:opacity-40 disabled:hover:bg-white cursor-pointer transition-colors"
-                        >
-                            <ChevronRight className="w-4 h-4" />
-                        </button>
-                    </div>
-                </div>
-            </div>
+            {/* Reusable DataList Component */}
+            <DataList
+                data={paginatedPetitions}
+                loading={loadingPetitions}
+                headers={headers}
+                noDataMessage="No se encontraron actividades registradas."
+                loadingMessage="Cargando peticiones..."
+                filters={{
+                    search: {
+                        value: searchTerm,
+                        onChange: setSearchTerm,
+                        placeholder: "Buscar por pasajero o destino...",
+                    },
+                    selects: [
+                        {
+                            label: "Ordenado por:",
+                            value: sortBy,
+                            onChange: setSortBy,
+                            options: [
+                                { value: "fecha_asc", label: "Fecha Ascendente" },
+                                { value: "fecha_desc", label: "Fecha Descendente" },
+                            ],
+                        },
+                        {
+                            label: "Filtrar por:",
+                            value: statusFilter,
+                            onChange: setStatusFilter,
+                            options: [
+                                { value: "all", label: "Todos los Estados" },
+                                { value: "Pendiente", label: "Pendiente" },
+                                { value: "En Camino", label: "En Camino" },
+                                { value: "En viaje", label: "En Viaje" },
+                                { value: "Completado", label: "Completado" },
+                                { value: "Cancelado", label: "Cancelado" },
+                            ],
+                        },
+                    ],
+                }}
+                pagination={{
+                    page,
+                    totalPages,
+                    totalItems,
+                    pageSize: 4,
+                    setPage,
+                    nextPage: () => setPage(p => Math.min(totalPages, p + 1)),
+                    prevPage: () => setPage(p => Math.max(1, p - 1)),
+                    itemTypeName: "peticiones hechas",
+                }}
+            />
         </div>
     );
 }

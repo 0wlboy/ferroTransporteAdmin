@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import Input from "../../components/Input";
+import Input from "../../components/inputs/Input";
 
 export default function Login() {
     const navigate = useNavigate();
     const { currentUser, login } = useAuth();
     const [email, setEmail] = useState("administrador@ferrotransporte.com");
     const [password, setPassword] = useState("admin123");
-    
+
     // Validation states
     const [errors, setErrors] = useState({ email: "", password: "" });
     const [errorMsg, setErrorMsg] = useState("");
@@ -101,7 +101,7 @@ export default function Login() {
                             {errorMsg}
                         </div>
                     )}
-                    
+
                     <Input
                         id="email"
                         label="Correo Electrónico"

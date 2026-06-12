@@ -8,3 +8,4 @@ export { default as LocationView } from "./auth/LocationView";
 export { default as UserActivity } from "./auth/UserActivity";
 export { default as CarActivity } from "./auth/CarActivity";
 export { default as CarView } from "./auth/CarView";
+export { default as Home } from "./auth/Home";

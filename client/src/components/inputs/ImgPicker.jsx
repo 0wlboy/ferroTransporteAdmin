@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Camera, User, Loader2 } from "lucide-react";
-import useUploadImage from "../hooks/useUploadImage";
+import useUploadImage from "../../hooks/useUploadImage";
 
 export default function ImagePicker({
     bucketName,

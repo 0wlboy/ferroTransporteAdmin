@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import Input from "../../components/Input";
-import ImagePicker from "../../components/imgPicker";
+import Input from "../../components/inputs/Input";
+import ImagePicker from "../../components/inputs/ImgPicker";
 
 export default function Register() {
     const navigate = useNavigate();

@@ -10,7 +10,7 @@ import {
     LogOut,
     ChevronRight,
 } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 
 const navItems = [
     { to: "/home-view", label: "Home", icon: Home, end: true },

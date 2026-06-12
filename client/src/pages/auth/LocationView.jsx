@@ -1,7 +1,8 @@
 import { useState } from "react";
 import useGetLocations from "../../hooks/useGetLocations";
 import { LocationCard } from "../../components/cards/LocationCard";
-import { Search, FileDown, Plus } from "lucide-react";
+import DataList from "../../components/UI/DataList";
+import { FileDown, Plus } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -78,41 +79,31 @@ export default function LocationView() {
                 </div>
             </div>
 
-            {/* Filter and Search Bar Section */}
-            <div className="bg-white rounded-2xl border border-[#F3E8EB] p-5 shadow-xs flex flex-col md:flex-row gap-4 items-center justify-between">
-                {/* Search Input */}
-                <div className="relative w-full md:max-w-md">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-400" />
-                    <input
-                        type="text"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Buscar localizaciones..."
-                        className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all placeholder-gray-400 bg-[#F9FAFB]"
+            {/* Reusable DataList component in Grid layout mode */}
+            <DataList
+                data={filteredLocations}
+                cardWrapper={false}
+                renderItem={(loc) => (
+                    <LocationCard
+                        location={loc}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
                     />
-                </div>
-                <div className="text-xs font-semibold text-gray-400">
-                    Total: {filteredLocations.length} localizaciones encontradas
-                </div>
-            </div>
-
-            {/* Grid for Cards */}
-            {filteredLocations.length === 0 ? (
-                <div className="bg-white rounded-2xl border border-[#F3E8EB] p-12 text-center text-gray-400 text-sm">
-                    No se encontraron localizaciones registradas.
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredLocations.map((loc) => (
-                        <LocationCard
-                            key={loc.id}
-                            location={loc}
-                            onEdit={handleEdit}
-                            onDelete={handleDelete}
-                        />
-                    ))}
-                </div>
-            )}
+                )}
+                noDataMessage="No se encontraron localizaciones registradas."
+                filters={{
+                    search: {
+                        value: searchTerm,
+                        onChange: setSearchTerm,
+                        placeholder: "Buscar localizaciones...",
+                    },
+                }}
+                pagination={{
+                    totalItems: filteredLocations.length,
+                    itemTypeName: "localizaciones encontradas",
+                }}
+            />
         </div>
     );
 }
+

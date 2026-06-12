@@ -1,6 +1,6 @@
 import React from "react";
 import { Menu, X } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 
 export default function Header({ title, collapsed, setCollapsed, mobileOpen, setMobileOpen, onProfileClick }) {
     const { currentUser } = useAuth();
