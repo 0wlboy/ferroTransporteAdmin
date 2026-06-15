@@ -87,7 +87,9 @@ export default function CarActivity() {
     };
 
     const handleEditVehicle = () => {
-        alert(`Editar vehículo: ${vehicleProfile?.fullName} (ID: ${vehicleProfile?.id})`);
+        if (vehicleProfile?.id) {
+            navigate(`/update-car/${vehicleProfile.id}`);
+        }
     };
 
     if (loadingVehicle) {

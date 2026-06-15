@@ -75,7 +75,7 @@ export default function UserForm({
     };
 
     const validateCi = (val) => {
-        if (isEdit && !val) return "";
+        if (isEdit) return "";
         if (!val) return "La cédula de identidad es requerida.";
         if (!ciRegex.test(val)) return "La cédula debe contener entre 6 y 9 dígitos.";
         return "";
@@ -105,7 +105,6 @@ export default function UserForm({
             (initialData?.primer_nombre ? `${initialData.primer_nombre} ${initialData.apellido || ""}`.trim() : "") || 
             ""
         ) ||
-        ci !== (initialData?.ci || initialData?.ci_user || "") ||
         telefono !== (initialData?.telefono || initialData?.telf || "") ||
         idGerencia !== (initialData?.idGerencia || initialData?.id_gerencia || "") ||
         hasExternalChanges
@@ -222,6 +221,7 @@ export default function UserForm({
                         id="ci"
                         label="CEDULA DE IDENTIDAD"
                         required={!isEdit}
+                        disabled={isEdit}
                         value={ci}
                         onChange={(e) => {
                             setCi(e.target.value);

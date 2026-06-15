@@ -25,7 +25,9 @@ export default function Input({
             {label && (
                 <label 
                     htmlFor={id} 
-                    className="block text-xs font-semibold text-gray-700 mb-1.5 select-none"
+                    className={`block text-xs font-semibold mb-1.5 select-none transition-colors ${
+                        disabled ? "text-gray-400" : "text-gray-700"
+                    }`}
                 >
                     {label} {required && <span className="text-[#8A1538] font-bold">*</span>}
                 </label>
@@ -33,8 +35,10 @@ export default function Input({
             
             <div className="relative w-full">
                 {Icon && (
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none flex items-center justify-center">
-                        <Icon className="w-4.5 h-4.5 text-gray-400" />
+                    <div className={`absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none flex items-center justify-center transition-colors ${
+                        disabled ? "text-gray-300" : "text-gray-400"
+                    }`}>
+                        <Icon className="w-4.5 h-4.5" />
                     </div>
                 )}
                 <input
@@ -46,7 +50,7 @@ export default function Input({
                     placeholder={placeholder}
                     required={required}
                     disabled={disabled}
-                    className={`w-full ${Icon ? "pl-11" : "pl-4"} pr-10 py-3 rounded-xl border text-sm transition-all focus:outline-none focus:ring-2 disabled:bg-gray-55 disabled:cursor-not-allowed ${
+                    className={`w-full ${Icon ? "pl-11" : "pl-4"} pr-10 py-3 rounded-xl border text-sm transition-all focus:outline-none focus:ring-2 disabled:bg-[#F3F4F6] disabled:text-gray-400 disabled:border-gray-200/50 disabled:cursor-not-allowed ${
                         error
                             ? "border-red-500 focus:border-red-600 focus:ring-red-500/10 text-red-900 placeholder-red-300"
                             : "border-gray-200 focus:border-[#8A1538] focus:ring-[#8A1538]/10 text-gray-900 placeholder-gray-400 bg-[#F9FAFB] focus:bg-white"

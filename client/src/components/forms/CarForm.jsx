@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Car, Loader2, User, Building, Mail } from "lucide-react";
 import Input from "../inputs/Input";
 
@@ -7,7 +7,10 @@ export default function CarForm({
     onCancel,
     isLoading = false,
     drivers = [],
-    errorMsg = ""
+    errorMsg = "",
+    isEdit = false,
+    initialData = null,
+    hasExternalChanges = false
 }) {
     const [placa, setPlaca] = useState("");
     const [marca, setMarca] = useState("");
@@ -16,6 +19,19 @@ export default function CarForm({
     const [numPuestos, setNumPuestos] = useState("");
     const [maletero, setMaletero] = useState("Si");
     const [ciDriver, setCiDriver] = useState("");
+
+    // Load initial data for editing
+    useEffect(() => {
+        if (initialData) {
+            setPlaca(initialData.placa || "");
+            setMarca(initialData.marca || "");
+            setModelo(initialData.modelo || "");
+            setYear(initialData.año?.toString() || initialData.year?.toString() || "");
+            setNumPuestos(initialData.num_asientos?.toString() || initialData.numPuestos?.toString() || "");
+            setMaletero(initialData.maletero_amplio === true || initialData.maletero === "Si" ? "Si" : "No");
+            setCiDriver(initialData.ci_driver || "");
+        }
+    }, [initialData]);
 
     // Errors state
     const [errors, setErrors] = useState({
@@ -34,24 +50,28 @@ export default function CarForm({
 
     // Validators
     const validatePlaca = (val) => {
+        if (isEdit) return "";
         if (!val) return "La placa es requerida.";
         if (!placaRegex.test(val)) return "La placa debe contener entre 5 y 7 caracteres alfanuméricos.";
         return "";
     };
 
     const validateMarca = (val) => {
+        if (isEdit && !val) return "";
         if (!val) return "La marca es requerida.";
         if (!nameRegex.test(val)) return "La marca debe contener entre 2 y 60 caracteres.";
         return "";
     };
 
     const validateModelo = (val) => {
+        if (isEdit && !val) return "";
         if (!val) return "El modelo es requerido.";
         if (!nameRegex.test(val)) return "El modelo debe contener entre 2 y 60 caracteres.";
         return "";
     };
 
     const validateYear = (val) => {
+        if (isEdit && !val) return "";
         if (!val) return "El año es requerido.";
         if (!yearRegex.test(val)) return "El año debe contener 4 dígitos.";
         const y = parseInt(val, 10);
@@ -61,6 +81,7 @@ export default function CarForm({
     };
 
     const validateNumPuestos = (val) => {
+        if (isEdit && !val) return "";
         if (!val) return "El número de puestos es requerido.";
         const num = parseInt(val, 10);
         if (isNaN(num) || num <= 0 || num > 100) return "El número de puestos debe ser un número válido (entre 1 y 100).";
@@ -68,14 +89,24 @@ export default function CarForm({
     };
 
     const validateMaletero = (val) => {
+        if (isEdit && !val) return "";
         if (!val) return "El maletero es requerido.";
         return "";
     };
 
     // Form validation check
-    const isFormFilled = placa && marca && modelo && year && numPuestos && maletero;
+    const isFormFilled = isEdit || (placa && marca && modelo && year && numPuestos && maletero);
+    const isDirty = !isEdit || (
+        marca !== (initialData?.marca || "") ||
+        modelo !== (initialData?.modelo || "") ||
+        year !== (initialData?.año?.toString() || initialData?.year?.toString() || "") ||
+        numPuestos !== (initialData?.num_asientos?.toString() || initialData?.numPuestos?.toString() || "") ||
+        (maletero === "Si") !== (initialData?.maletero_amplio === true) ||
+        ciDriver !== (initialData?.ci_driver || "") ||
+        hasExternalChanges
+    );
     const hasAnyError = !!(errors.placa || errors.marca || errors.modelo || errors.year || errors.numPuestos || errors.maletero);
-    const isSubmitDisabled = !isFormFilled || hasAnyError || isLoading;
+    const isSubmitDisabled = !isFormFilled || !isDirty || hasAnyError || isLoading;
 
     // Submit handler
     const handleSubmit = (e) => {
@@ -133,7 +164,8 @@ export default function CarForm({
                     <Input
                         id="placa"
                         label="PLACA"
-                        required
+                        required={!isEdit}
+                        disabled={isEdit}
                         type="text"
                         value={placa}
                         onChange={(e) => {
@@ -148,7 +180,7 @@ export default function CarForm({
                     <Input
                         id="marca"
                         label="MARCA"
-                        required
+                        required={!isEdit}
                         type="text"
                         value={marca}
                         onChange={(e) => {
@@ -167,7 +199,7 @@ export default function CarForm({
                     <Input
                         id="modelo"
                         label="MODELO"
-                        required
+                        required={!isEdit}
                         value={modelo}
                         onChange={(e) => {
                             setModelo(e.target.value);
@@ -181,7 +213,7 @@ export default function CarForm({
                     <Input
                         id="year"
                         label="AÑO"
-                        required
+                        required={!isEdit}
                         value={year}
                         onChange={(e) => {
                             setYear(e.target.value);
@@ -199,7 +231,7 @@ export default function CarForm({
                     <Input
                         id="numPuestos"
                         label="NUMERO DE PUESTOS"
-                        required
+                        required={!isEdit}
                         type="number"
                         min="1"
                         max="100"
@@ -220,7 +252,7 @@ export default function CarForm({
                             htmlFor="maletero"
                             className="block text-xs font-semibold text-gray-700 mb-1.5 select-none"
                         >
-                            MALETERO <span className="text-[#8A1538] font-bold">*</span>
+                            MALETERO {!isEdit && <span className="text-[#8A1538] font-bold">*</span>}
                         </label>
 
                         <div className="relative w-full">
