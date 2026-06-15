@@ -179,6 +179,7 @@ export default function Register() {
                     <p className="text-gray-500 text-sm mt-1 mb-4">Regístrate como administrador en la plataforma</p>
 
                     <ImagePicker
+                        shape="rounded-full"
                         icon={User}
                         bucketName="fotosPerfil"
                         placeholderType="user"

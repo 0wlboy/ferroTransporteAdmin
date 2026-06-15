@@ -6,7 +6,8 @@ export default function LocationForm({
     onSubmit,
     onCancel,
     isLoading = false,
-    errorMsg = ""
+    errorMsg = "",
+    onCoordinatesChange
 }) {
     const [name, setName] = useState("");
     const [lng, setLng] = useState("");
@@ -111,8 +112,12 @@ export default function LocationForm({
                         type="text"
                         value={lat}
                         onChange={(e) => {
-                            setLat(e.target.value);
-                            setErrors(prev => ({ ...prev, lat: validateLat(e.target.value) }));
+                            const val = e.target.value;
+                            setLat(val);
+                            setErrors(prev => ({ ...prev, lat: validateLat(val) }));
+                            if (onCoordinatesChange) {
+                                onCoordinatesChange({ lat: val, lng });
+                            }
                         }}
                         onBlur={() => setErrors(prev => ({ ...prev, lat: validateLat(lat) }))}
                         error={errors.lat}
@@ -127,8 +132,12 @@ export default function LocationForm({
                         type="text"
                         value={lng}
                         onChange={(e) => {
-                            setLng(e.target.value);
-                            setErrors(prev => ({ ...prev, lng: validateLng(e.target.value) }));
+                            const val = e.target.value;
+                            setLng(val);
+                            setErrors(prev => ({ ...prev, lng: validateLng(val) }));
+                            if (onCoordinatesChange) {
+                                onCoordinatesChange({ lat, lng: val });
+                            }
                         }}
                         onBlur={() => setErrors(prev => ({ ...prev, lng: validateLng(lng) }))}
                         error={errors.lng}

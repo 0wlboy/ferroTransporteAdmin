@@ -87,7 +87,9 @@ export default function UserActivity() {
     };
 
     const handleEditUser = () => {
-        alert(`Editar usuario: ${userProfile?.fullName} (ID: ${userProfile?.id})`);
+        if (userId) {
+            navigate(`/update-user/${userId}`);
+        }
     };
 
     if (loadingUser) {

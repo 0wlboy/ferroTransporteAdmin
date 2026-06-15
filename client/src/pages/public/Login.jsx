@@ -126,6 +126,16 @@ export default function Login() {
                         placeholder="••••••••"
                     />
 
+                    <div className="flex justify-end">
+                        <button
+                            type="button"
+                            onClick={() => navigate("/recovery-email")}
+                            className="text-xs font-bold text-[#8A1538] hover:text-[#72102C] transition-colors cursor-pointer"
+                        >
+                            ¿Olvidaste tu contraseña?
+                        </button>
+                    </div>
+
                     <button
                         type="submit"
                         disabled={isLoading}
@@ -153,7 +163,7 @@ export default function Login() {
 
                 <div className="mt-8 pt-6 border-t border-[#F3E8EB] text-center">
                     <p className="text-xs text-gray-400">
-                        © 2026 FleetControl. Todos los derechos reservados.
+                        © 2026 CVG Ferrominera Orinoco. Todos los derechos reservados.
                     </p>
                 </div>
             </div>
