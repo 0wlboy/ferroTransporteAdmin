@@ -1,16 +1,16 @@
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import useGetUserActivity from "../../hooks/useGetUserActivity";
 import DataList from "../../components/UI/DataList";
+import ExportDropdown from "../../components/UI/ExportDropdown";
+import { exportToExcel } from "../../../utils/excelExport";
+import { exportToPDF } from "../../../utils/pdfExport";
 import {
-    FileDown,
     MoreVertical,
     Car,
     User,
     X,
     ArrowLeft
 } from "lucide-react";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 
 export default function UserActivity() {
     const { id } = useParams();
@@ -45,30 +45,45 @@ export default function UserActivity() {
     const handlePrintPDF = () => {
         if (!userProfile) return;
 
-        const doc = new jsPDF();
-        doc.text(`Reporte de Actividad - ${userProfile.fullName}`, 60, 10);
-        doc.text(`CI: ${userProfile.ci_user || "N/D"} | Rol: ${userProfile.role || "N/D"}`, 65, 15);
-        doc.text("Fecha Emisión: " + new Date().toLocaleDateString(), 75, 20);
-
         const tableData = sortedPetitions.map(p => [
             p.id,
-            p.passengerName,
-            p.origen_nombre,
-            p.destino_nombre,
-            p.fecha,
-            p.estado
+            p.passengerName || "N/D",
+            p.origen_nombre || "N/D",
+            p.destino_nombre || "N/D",
+            p.fecha || "N/D",
+            p.estado || "PENDIENTE"
         ]);
 
         const tableHeaders = ["ID", "Pasajero", "Origen", "Destino", "Fecha/Hora", "Estado"];
 
-        autoTable(doc, {
-            head: [tableHeaders],
-            body: tableData,
-            startY: 25,
-            styles: { fontSize: 8 },
-            headStyles: { fillColor: [138, 21, 56] }
+        exportToPDF({
+            title: `Reporte de Actividad - ${userProfile.fullName}`,
+            subtitles: [
+                `CI: ${userProfile.ci_user || "N/D"} | Rol: ${userProfile.role || "N/D"}`
+            ],
+            headers: tableHeaders,
+            data: tableData,
+            fileName: `actividad_${userProfile.fullName.replace(/\s+/g, "_")}`
         });
-        doc.save(`actividad_${userProfile.fullName.replace(/\s+/g, "_")}.pdf`);
+    };
+
+    const handleExportExcel = () => {
+        if (!userProfile) return;
+
+        const exportData = sortedPetitions.map(p => ({
+            "ID Petición": p.id,
+            "CI Pasajero": p.ci_pasajero || "",
+            "Pasajero": p.passengerName || "",
+            "Pasajeros Totales": (p.num_acompañantes || 0) + 1,
+            "CI Conductor": p.ci_driver || "No asignado",
+            "Conductor": p.driverName || "No asignado",
+            "Origen": p.origen_nombre || "",
+            "Destino": p.destino_nombre || "",
+            "Carga / Descripción": p.carga || p.descripcion || "Ninguna",
+            "Fecha/Hora": p.fecha || "",
+            "Estado": p.estado || ""
+        }));
+        exportToExcel(exportData, `Actividad_${userProfile.fullName.replace(/\s+/g, "_")}`);
     };
 
     const handleEditUser = () => {
@@ -207,13 +222,10 @@ export default function UserActivity() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <button
-                        onClick={handlePrintPDF}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-white border border-primary text-primary hover:bg-primary-light transition-all font-bold text-xs tracking-wider rounded-xl cursor-pointer shadow-xs"
-                    >
-                        <FileDown className="w-4 h-4 text-primary" />
-                        <span>EXPORTA A PDF</span>
-                    </button>
+                    <ExportDropdown
+                        onExportPDF={handlePrintPDF}
+                        onExportExcel={handleExportExcel}
+                    />
                     <button
                         onClick={handleEditUser}
                         className="flex items-center gap-2 px-4 py-2.5 bg-primary border border-transparent text-white hover:bg-primary-hover transition-all font-bold text-xs tracking-wider rounded-xl cursor-pointer shadow-xs"

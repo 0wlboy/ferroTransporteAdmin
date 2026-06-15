@@ -3,8 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { usePaginateVehicles } from "../../hooks/usePaginateVehicles";
 import StatCard from "../../components/cards/StatCard";
 import DataList from "../../components/UI/DataList";
+import ExportDropdown from "../../components/UI/ExportDropdown";
+import { exportToExcel } from "../../../utils/excelExport";
+import { exportToPDF } from "../../../utils/pdfExport";
 import {
-    FileDown,
     MoreVertical,
     Car,
     User,
@@ -12,8 +14,6 @@ import {
     Wrench,
     CheckCircle
 } from "lucide-react";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 
 export default function CarView() {
     const navigate = useNavigate();
@@ -34,15 +34,12 @@ export default function CarView() {
         prevPage,
         setPage,
         stats,
+        fetchFilteredAll
     } = usePaginateVehicles({ initialPageSize: 4 });
 
-    const handlePrintPDF = () => {
-        const doc = new jsPDF();
-        doc.text("Reporte de Vehículos", 80, 10);
-        doc.text("Fecha: " + new Date().toLocaleDateString(), 80, 15);
-
-        // Formatear datos para autotable
-        const tableData = vehicles.map(v => [
+    const handlePrintPDF = async () => {
+        const allVehicles = await fetchFilteredAll();
+        const tableData = allVehicles.map(v => [
             v.id,
             v.marca,
             v.modelo,
@@ -56,14 +53,29 @@ export default function CarView() {
 
         const tableHeaders = ["ID", "Marca", "Modelo", "Año", "Placa", "Asientos", "Maletero Amplio", "Conductor", "Estado"];
 
-        autoTable(doc, {
-            head: [tableHeaders],
-            body: tableData,
-            startY: 20,
-            styles: { fontSize: 8 },
-            headStyles: { fillColor: [138, 21, 56] } // Brand primary color (#8A1538)
+        exportToPDF({
+            title: "Reporte de Vehículos",
+            headers: tableHeaders,
+            data: tableData,
+            fileName: "reporte_de_vehiculos"
         });
-        doc.save("reporte de vehiculos.pdf");
+    };
+
+    const handleExportExcel = async () => {
+        const allVehicles = await fetchFilteredAll();
+        const exportData = allVehicles.map(v => ({
+            "ID": v.id,
+            "Marca": v.marca || "",
+            "Modelo": v.modelo || "",
+            "Año": v.año || "",
+            "Placa": v.placa || "",
+            "Asientos": v.num_asientos || "",
+            "Maletero Amplio": v.maletero_amplio ? "Sí" : "No",
+            "Conductor": v.driverName || "",
+            "Estado": v.estado || "",
+            "Fecha Registro": v.fecha || ""
+        }));
+        exportToExcel(exportData, "Reporte_Vehiculos");
     };
 
     // State for controlling active row action menu
@@ -202,13 +214,10 @@ export default function CarView() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => handlePrintPDF()}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-white border border-primary text-primary hover:bg-primary-light hover:text-primary transition-all font-bold text-xs tracking-wider rounded-xl cursor-pointer shadow-xs hover:shadow-sm"
-                    >
-                        <FileDown className="w-4 h-4 text-primary" />
-                        <span>EXPORTA A PDF</span>
-                    </button>
+                    <ExportDropdown
+                        onExportPDF={handlePrintPDF}
+                        onExportExcel={handleExportExcel}
+                    />
                     <button
                         onClick={() => navigate("/add-car")}
                         className="flex items-center gap-2 px-4 py-2.5 bg-primary border border-transparent text-white hover:bg-primary-hover transition-all font-bold text-xs tracking-wider rounded-xl cursor-pointer shadow-xs hover:shadow-sm"

@@ -196,6 +196,60 @@ export function usePaginatePassengers({ initialPageSize = 4 } = {}) {
 
     const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
 
+    const fetchFilteredAll = async () => {
+        try {
+            let query = supabase.from("usuarios").select("*").eq("role", "Pasajero");
+
+            if (searchTerm.trim() !== "") {
+                const term = `%${searchTerm.trim()}%`;
+                query = query.or(`ci_user.ilike.${term},primer_nombre.ilike.${term},apellido.ilike.${term}`);
+            }
+
+            if (statusFilter !== "all") {
+                query = query.eq("activo", statusFilter);
+            }
+
+            if (sortBy === "fecha_asc") query = query.order("created_at", { ascending: true });
+            else if (sortBy === "fecha_desc") query = query.order("created_at", { ascending: false });
+            else if (sortBy === "nombre_asc") query = query.order("primer_nombre", { ascending: true });
+            else if (sortBy === "nombre_desc") query = query.order("primer_nombre", { ascending: false });
+            else if (sortBy === "apellido_asc") query = query.order("apellido", { ascending: true });
+            else if (sortBy === "apellido_desc") query = query.order("apellido", { ascending: false });
+
+            const { data: users, error: listError } = await query;
+            if (listError) throw listError;
+            if (!users || users.length === 0) return [];
+
+            const id_gerencias = [...new Set(users.flatMap(u => [u.id_gerencia]).filter(Boolean))];
+            const localizacionMap = {};
+            if (id_gerencias.length > 0) {
+                const { data: localizaciones, error: lError } = await supabase
+                    .from("localizaciones")
+                    .select("id, nombre")
+                    .in("id", id_gerencias);
+                if (lError) throw lError;
+                localizaciones?.forEach(loc => {
+                    localizacionMap[loc.id] = loc.nombre;
+                });
+            }
+
+            return users.map(u => ({
+                id: u.id,
+                nombre: u.primer_nombre || u.nombre || null,
+                apellido: u.apellido || null,
+                correo: u.email || null,
+                telefono: u.telf || null,
+                ci_user: u.ci_user || null,
+                activo: u.activo || null,
+                fecha: formatFecha(u.created_at),
+                localizacion: localizacionMap[u.id_gerencia] || null,
+            }));
+        } catch (err) {
+            console.error("Error fetching all filtered passengers for export:", err);
+            return [];
+        }
+    };
+
     return {
         data,
         loading,
@@ -214,6 +268,7 @@ export function usePaginatePassengers({ initialPageSize = 4 } = {}) {
         nextPage: () => page < totalPages && setPage(p => p + 1),
         prevPage: () => page > 1 && setPage(p => p - 1),
         setPage,
-        stats
+        stats,
+        fetchFilteredAll
     };
 }

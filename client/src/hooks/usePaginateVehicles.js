@@ -210,6 +210,61 @@ export function usePaginateVehicles({ initialPageSize = 4 } = {}) {
 
     const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
 
+    const fetchFilteredAll = async () => {
+        try {
+            let query = supabase.from("vehiculos").select("*");
+
+            if (searchTerm.trim() !== "") {
+                const term = `%${searchTerm.trim()}%`;
+                query = query.or(`placa.ilike.${term},marca.ilike.${term},modelo.ilike.${term},ci_driver.ilike.${term}`);
+            }
+
+            if (statusFilter !== "all") {
+                query = query.eq("estado", statusFilter);
+            }
+
+            if (sortBy === "fecha_asc") query = query.order("created_at", { ascending: true });
+            else if (sortBy === "fecha_desc") query = query.order("created_at", { ascending: false });
+            else if (sortBy === "placa_asc") query = query.order("placa", { ascending: true });
+            else if (sortBy === "placa_desc") query = query.order("placa", { ascending: false });
+            else if (sortBy === "estado_asc") query = query.order("estado", { ascending: true });
+            else if (sortBy === "estado_desc") query = query.order("estado", { ascending: false });
+
+            const { data: vehicles, error: listError } = await query;
+            if (listError) throw listError;
+            if (!vehicles || vehicles.length === 0) return [];
+
+            const uniqueCis = [...new Set(vehicles.flatMap(v => [v.ci_driver]).filter(Boolean))];
+            const userMap = {};
+            if (uniqueCis.length > 0) {
+                const { data: users, error: uError } = await supabase
+                    .from("usuarios")
+                    .select("ci_user, primer_nombre, apellido")
+                    .in("ci_user", uniqueCis);
+                if (uError) throw uError;
+                users?.forEach(u => {
+                    userMap[u.ci_user] = `${u.primer_nombre || ""} ${u.apellido || ""}`.trim();
+                });
+            }
+
+            return vehicles.map(v => ({
+                id: v.id,
+                placa: v.placa || null,
+                modelo: v.modelo || null,
+                marca: v.marca || null,
+                num_asientos: v.num_asientos || null,
+                maletero_amplio: v.maletero_amplio || null,
+                año: v.año || null,
+                driverName: v.ci_driver ? (userMap[v.ci_driver] || v.ci_driver) : "Por Asignar",
+                estado: v.estado,
+                fecha: formatFecha(v.created_at)
+            }));
+        } catch (err) {
+            console.error("Error fetching all filtered vehicles for export:", err);
+            return [];
+        }
+    };
+
     return {
         data,
         loading,
@@ -228,6 +283,7 @@ export function usePaginateVehicles({ initialPageSize = 4 } = {}) {
         nextPage: () => page < totalPages && setPage(p => p + 1),
         prevPage: () => page > 1 && setPage(p => p - 1),
         setPage,
-        stats
+        stats,
+        fetchFilteredAll
     };
 }

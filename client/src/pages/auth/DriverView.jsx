@@ -4,16 +4,16 @@ import { usePaginateDrivers } from "../../hooks/usePaginateDrivers";
 import StatCard from "../../components/cards/StatCard";
 import DriverDetails from "../../components/modals/DriverDetails";
 import DataList from "../../components/UI/DataList";
+import ExportDropdown from "../../components/UI/ExportDropdown";
+import { exportToExcel } from "../../../utils/excelExport";
+import { exportToPDF } from "../../../utils/pdfExport";
 import {
-    FileDown,
     MoreVertical,
     Car,
     User,
     Plus,
     CheckCircle
 } from "lucide-react";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 
 export default function DriverView() {
     const navigate = useNavigate();
@@ -34,36 +34,48 @@ export default function DriverView() {
         prevPage,
         setPage,
         stats,
+        fetchFilteredAll
     } = usePaginateDrivers({ initialPageSize: 4 });
 
-    const handlePrintPDF = () => {
-        const doc = new jsPDF();
-        doc.text("Reporte de Conductores", 80, 10);
-        doc.text("Fecha: " + new Date().toLocaleDateString(), 80, 15);
-
-        // Formatear datos para autotable
-        const tableData = drivers.map(p => [
+    const handlePrintPDF = async () => {
+        const allDrivers = await fetchFilteredAll();
+        const tableData = allDrivers.map(p => [
             p.id,
-            `${p.nombre} ${p.apellido}`,
-            p.ci_user,
+            `${p.nombre || ""} ${p.apellido || ""}`.trim(),
+            p.ci_user || "N/D",
             p.localizacion || "N/D",
             p.correo || "N/D",
             p.telefono || "N/D",
             p.vehiculo_placa || "N/D",
             p.activo ? "Activo" : "Inactivo",
-            p.fecha
+            p.fecha || "N/D"
         ]);
 
         const tableHeaders = ["ID", "Nombre Completo", "CI", "Gerencia", "Correo", "Teléfono", "Vehiculo Placa", "Estado", "Fecha Registro"];
 
-        autoTable(doc, {
-            head: [tableHeaders],
-            body: tableData,
-            startY: 20,
-            styles: { fontSize: 8 },
-            headStyles: { fillColor: [138, 21, 56] } // Brand primary color (#8A1538)
+        exportToPDF({
+            title: "Reporte de Conductores",
+            headers: tableHeaders,
+            data: tableData,
+            fileName: "reporte_de_conductores"
         });
-        doc.save("reporte de conductores.pdf");
+    };
+
+    const handleExportExcel = async () => {
+        const allDrivers = await fetchFilteredAll();
+        const exportData = allDrivers.map(p => ({
+            "ID": p.id,
+            "Nombre": p.nombre || "",
+            "Apellido": p.apellido || "",
+            "Cédula (CI)": p.ci_user || "",
+            "Gerencia / Departamento": p.localizacion || "Sin Gerencia",
+            "Correo": p.correo || "",
+            "Teléfono": p.telefono || "",
+            "Vehículo Placa": p.vehiculo_placa || "Sin vehículo",
+            "Estado": p.activo ? "Activo" : "Inactivo",
+            "Fecha Registro": p.fecha || ""
+        }));
+        exportToExcel(exportData, "Reporte_Conductores");
     };
 
     // State for controlling active row action menu and details modal
@@ -215,13 +227,10 @@ export default function DriverView() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => handlePrintPDF()}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-white border border-primary text-primary hover:bg-primary-light hover:text-primary transition-all font-bold text-xs tracking-wider rounded-xl cursor-pointer shadow-xs hover:shadow-sm"
-                    >
-                        <FileDown className="w-4 h-4 text-primary" />
-                        <span>EXPORTA A PDF</span>
-                    </button>
+                    <ExportDropdown
+                        onExportPDF={handlePrintPDF}
+                        onExportExcel={handleExportExcel}
+                    />
                     <button
                         onClick={() => navigate("/add-driver")}
                         className="flex items-center gap-2 px-4 py-2.5 bg-primary border border-transparent text-white hover:bg-primary-hover transition-all font-bold text-xs tracking-wider rounded-xl cursor-pointer shadow-xs hover:shadow-sm"

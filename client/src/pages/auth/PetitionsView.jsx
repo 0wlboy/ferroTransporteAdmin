@@ -3,16 +3,16 @@ import { usePaginatePetitions } from "../../hooks/usePaginatePetitions";
 import StatCard from "../../components/cards/StatCard";
 import PetitionDetails from "../../components/modals/PetitionDetails";
 import DataList from "../../components/UI/DataList";
+import ExportDropdown from "../../components/UI/ExportDropdown";
+import { exportToExcel } from "../../../utils/excelExport";
+import { exportToPDF } from "../../../utils/pdfExport";
 import {
-    FileDown,
     MoreVertical,
     ClipboardList,
     Car,
     XCircle,
     User,
 } from "lucide-react";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 
 export default function PetitionsView() {
     const {
@@ -32,29 +32,51 @@ export default function PetitionsView() {
         prevPage,
         setPage,
         stats,
+        fetchFilteredAll
     } = usePaginatePetitions({ initialPageSize: 4 });
 
-    const handlePrintPDF = () => {
-        const doc = new jsPDF();
-        doc.text("Reporte de Peticiones", 80, 10);
-        doc.text("Fecha: " + new Date().toLocaleDateString(), 80, 15);
-
-        // Formatear datos para autotable
-        const tableData = petitions.map(p => [
+    const handlePrintPDF = async () => {
+        const allPetitions = await fetchFilteredAll();
+        const tableData = allPetitions.map(p => [
             p.id,
-            p.ci_pasajero,
-            p.ci_driver,
-            p.origen_nombre,
-            p.destino_nombre,
-            p.estado,
-            p.fecha,
-            p.prioridad,
+            p.ci_pasajero || "N/D",
+            p.ci_driver || "N/D",
+            p.origen_nombre || "N/D",
+            p.destino_nombre || "N/D",
+            p.estado || "PENDIENTE",
+            p.fecha || "N/D",
+            p.prioridad || "Media"
         ]);
 
         const tableHeaders = ["ID", "CI Pasajero", "CI Conductor", "Origen", "Destino", "Estado", "Fecha", "Prioridad"];
 
-        autoTable(doc, { head: [tableHeaders], body: tableData, startY: 20, styles: { fontSize: 8 }, headStyles: { fillColor: [22, 163, 74] } });
-        doc.save("peticiones.pdf");
+        exportToPDF({
+            title: "Reporte de Peticiones",
+            headers: tableHeaders,
+            data: tableData,
+            fileName: "peticiones",
+            themeColor: [22, 163, 74] // Matches green theme
+        });
+    };
+
+    const handleExportExcel = async () => {
+        const allPetitions = await fetchFilteredAll();
+        const exportData = allPetitions.map(p => ({
+            "ID": p.id,
+            "CI Pasajero": p.ci_pasajero || "",
+            "Pasajero": p.passengerName || "",
+            "CI Conductor": p.ci_driver || "No asignado",
+            "Conductor": p.driverName || "No asignado",
+            "Placa Vehículo": p.placa_vehiculo || "No asignado",
+            "Origen": p.origen_nombre || "",
+            "Destino": p.destino_nombre || "",
+            "Carga": p.carga || "Ninguna",
+            "Descripción": p.descripcion || "",
+            "Prioridad": p.prioridad || "",
+            "Estado": p.estado || "",
+            "Fecha": p.fecha || ""
+        }));
+        exportToExcel(exportData, "Reporte_Peticiones");
     };
 
     // State for controlling active row action menu and details modal
@@ -227,13 +249,10 @@ export default function PetitionsView() {
                 </div>
 
                 <div>
-                    <button
-                        onClick={() => handlePrintPDF()}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-white border border-primary text-primary hover:bg-primary-light hover:text-primary transition-all font-bold text-xs tracking-wider rounded-xl cursor-pointer shadow-xs hover:shadow-sm"
-                    >
-                        <FileDown className="w-4 h-4 text-primary" />
-                        <span>EXPORTA A PDF</span>
-                    </button>
+                    <ExportDropdown
+                        onExportPDF={handlePrintPDF}
+                        onExportExcel={handleExportExcel}
+                    />
                 </div>
             </div>
 

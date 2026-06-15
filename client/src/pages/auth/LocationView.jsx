@@ -3,9 +3,10 @@ import { useNavigate } from "react-router-dom";
 import useGetLocations from "../../hooks/useGetLocations";
 import { LocationCard } from "../../components/cards/LocationCard";
 import DataList from "../../components/UI/DataList";
-import { FileDown, Plus } from "lucide-react";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import ExportDropdown from "../../components/UI/ExportDropdown";
+import { exportToExcel } from "../../../utils/excelExport";
+import { exportToPDF } from "../../../utils/pdfExport";
+import { Plus } from "lucide-react";
 
 export default function LocationView() {
     const navigate = useNavigate();
@@ -18,11 +19,7 @@ export default function LocationView() {
     );
 
     const handlePrintPDF = () => {
-        const doc = new jsPDF();
-        doc.text("Reporte de Localizaciones", 75, 10);
-        doc.text("Fecha: " + new Date().toLocaleDateString(), 80, 15);
-
-        // Formatear datos para autotable
+        // Since locations are loaded fully client-side and filtered client-side, we use filteredLocations directly
         const tableData = filteredLocations.map(loc => [
             loc.id,
             loc.nombre || "N/D",
@@ -33,14 +30,25 @@ export default function LocationView() {
 
         const tableHeaders = ["ID", "Nombre", "Coordenadas", "Viajes Realizados", "Estado"];
 
-        autoTable(doc, {
-            head: [tableHeaders],
-            body: tableData,
-            startY: 20,
-            styles: { fontSize: 9 },
-            headStyles: { fillColor: [138, 21, 56] } // Brand primary color (#8A1538)
+        exportToPDF({
+            title: "Reporte de Localizaciones",
+            headers: tableHeaders,
+            data: tableData,
+            fileName: "reporte_de_localizaciones"
         });
-        doc.save("reporte de localizaciones.pdf");
+    };
+
+    const handleExportExcel = () => {
+        const exportData = filteredLocations.map(loc => ({
+            "ID": loc.id,
+            "Nombre": loc.nombre || "",
+            "Latitud": loc.latitud || "",
+            "Longitud": loc.longitud || "",
+            "Coordenadas": loc.latitud && loc.longitud ? `${loc.latitud}° N, ${loc.longitud}° W` : "N/D",
+            "Viajes Realizados": loc.num_trips ?? 0,
+            "Estado": loc.activo ? "Activo" : "Inactivo"
+        }));
+        exportToExcel(exportData, "Reporte_Localizaciones");
     };
 
     const handleEdit = (location) => {
@@ -65,13 +73,10 @@ export default function LocationView() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => handlePrintPDF()}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-white border border-primary text-primary hover:bg-primary-light hover:text-primary transition-all font-bold text-xs tracking-wider rounded-xl cursor-pointer shadow-xs hover:shadow-sm"
-                    >
-                        <FileDown className="w-4 h-4 text-primary" />
-                        <span>EXPORTA A PDF</span>
-                    </button>
+                    <ExportDropdown
+                        onExportPDF={handlePrintPDF}
+                        onExportExcel={handleExportExcel}
+                    />
                     <button
                         onClick={() => navigate("/add-location")}
                         className="flex items-center gap-2 px-4 py-2.5 bg-primary border border-transparent text-white hover:bg-primary-hover transition-all font-bold text-xs tracking-wider rounded-xl cursor-pointer shadow-xs hover:shadow-sm"

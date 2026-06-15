@@ -3,16 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { usePaginatePassengers } from "../../hooks/usePaginatePassenges";
 import StatCard from "../../components/cards/StatCard";
 import DataList from "../../components/UI/DataList";
+import ExportDropdown from "../../components/UI/ExportDropdown";
+import { exportToExcel } from "../../../utils/excelExport";
+import { exportToPDF } from "../../../utils/pdfExport";
 import {
-    FileDown,
     MoreVertical,
     Car,
     User,
     Plus,
     CheckCircle
 } from "lucide-react";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 
 export default function PassengerView() {
     const navigate = useNavigate();
@@ -33,35 +33,46 @@ export default function PassengerView() {
         prevPage,
         setPage,
         stats,
+        fetchFilteredAll
     } = usePaginatePassengers({ initialPageSize: 4 });
 
-    const handlePrintPDF = () => {
-        const doc = new jsPDF();
-        doc.text("Reporte de Pasajeros", 80, 10);
-        doc.text("Fecha: " + new Date().toLocaleDateString(), 80, 15);
-
-        // Formatear datos para autotable
-        const tableData = passengers.map(p => [
+    const handlePrintPDF = async () => {
+        const allPassengers = await fetchFilteredAll();
+        const tableData = allPassengers.map(p => [
             p.id,
-            `${p.nombre} ${p.apellido}`,
-            p.ci_user,
-            p.localizacion,
-            p.correo,
-            p.telefono,
+            `${p.nombre || ""} ${p.apellido || ""}`.trim(),
+            p.ci_user || "N/D",
+            p.localizacion || "N/D",
+            p.correo || "N/D",
+            p.telefono || "N/D",
             p.activo ? "Activo" : "Inactivo",
-            p.fecha
+            p.fecha || "N/D"
         ]);
 
         const tableHeaders = ["ID", "Nombre Completo", "CI", "Gerencia", "Correo", "Teléfono", "Estado", "Fecha Registro"];
 
-        autoTable(doc, {
-            head: [tableHeaders],
-            body: tableData,
-            startY: 20,
-            styles: { fontSize: 8 },
-            headStyles: { fillColor: [138, 21, 56] } // Brand primary color (#8A1538)
+        exportToPDF({
+            title: "Reporte de Pasajeros",
+            headers: tableHeaders,
+            data: tableData,
+            fileName: "reporte_de_pasajeros"
         });
-        doc.save("reporte de pasajeros.pdf");
+    };
+
+    const handleExportExcel = async () => {
+        const allPassengers = await fetchFilteredAll();
+        const exportData = allPassengers.map(p => ({
+            "ID": p.id,
+            "Nombre": p.nombre || "",
+            "Apellido": p.apellido || "",
+            "Cédula (CI)": p.ci_user || "",
+            "Gerencia / Departamento": p.localizacion || "Sin Gerencia",
+            "Correo": p.correo || "",
+            "Teléfono": p.telefono || "",
+            "Estado": p.activo ? "Activo" : "Inactivo",
+            "Fecha Registro": p.fecha || ""
+        }));
+        exportToExcel(exportData, "Reporte_Pasajeros");
     };
 
     // State for controlling active row action menu
@@ -183,13 +194,10 @@ export default function PassengerView() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => handlePrintPDF()}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-white border border-primary text-primary hover:bg-primary-light hover:text-primary transition-all font-bold text-xs tracking-wider rounded-xl cursor-pointer shadow-xs hover:shadow-sm"
-                    >
-                        <FileDown className="w-4 h-4 text-primary" />
-                        <span>EXPORTA A PDF</span>
-                    </button>
+                    <ExportDropdown
+                        onExportPDF={handlePrintPDF}
+                        onExportExcel={handleExportExcel}
+                    />
                     <button
                         onClick={() => navigate("/add-passenger")}
                         className="flex items-center gap-2 px-4 py-2.5 bg-primary border border-transparent text-white hover:bg-primary-hover transition-all font-bold text-xs tracking-wider rounded-xl cursor-pointer shadow-xs hover:shadow-sm"

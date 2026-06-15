@@ -222,6 +222,78 @@ export function usePaginatePetitions({ initialPageSize = 4 } = {}) {
 
     const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
 
+    const fetchFilteredAll = async () => {
+        try {
+            let query = supabase.from("peticiones").select("*");
+
+            if (searchTerm.trim() !== "") {
+                const term = `%${searchTerm.trim()}%`;
+                query = query.or(`ci_pasajero.ilike.${term},ci_driver.ilike.${term},placa_vehiculo.ilike.${term}`);
+            }
+
+            if (statusFilter !== "all") {
+                query = query.eq("estado", statusFilter);
+            }
+
+            if (sortBy === "fecha_asc") query = query.order("created_at", { ascending: true });
+            else if (sortBy === "fecha_desc") query = query.order("created_at", { ascending: false });
+            else if (sortBy === "ci_pasajero_asc") query = query.order("ci_pasajero", { ascending: true });
+            else if (sortBy === "ci_driver_asc") query = query.order("ci_driver", { ascending: true });
+            else if (sortBy === "placa_vehiculo_asc") query = query.order("placa_vehiculo", { ascending: true });
+            else if (sortBy === "prioridad_asc") query = query.order("prioridad", { ascending: true });
+            else if (sortBy === "prioridad_desc") query = query.order("prioridad", { ascending: false });
+
+            const { data: petitions, error: listError } = await query;
+            if (listError) throw listError;
+            if (!petitions || petitions.length === 0) return [];
+
+            const uniqueCis = [...new Set(petitions.flatMap(p => [p.ci_pasajero, p.ci_driver]).filter(Boolean))];
+            const userMap = {};
+            if (uniqueCis.length > 0) {
+                const { data: users, error: uError } = await supabase
+                    .from("usuarios")
+                    .select("ci_user, primer_nombre, apellido")
+                    .in("ci_user", uniqueCis);
+                if (uError) throw uError;
+                users?.forEach(u => {
+                    userMap[u.ci_user] = `${u.primer_nombre || ""} ${u.apellido || ""}`.trim();
+                });
+            }
+
+            const { data: locations, error: lError } = await supabase
+                .from("localizaciones")
+                .select("id, nombre")
+                .in("id", [...new Set(petitions.flatMap(p => [p.origen_id, p.destino_id]).filter(Boolean))]);
+            if (lError) throw lError;
+            const locationMap = {};
+            locations?.forEach(l => {
+                locationMap[l.id] = l.nombre;
+            });
+
+            return petitions.map(p => ({
+                id: p.id,
+                ci_pasajero: p.ci_pasajero,
+                passengerName: userMap[p.ci_pasajero] || "Usuario Anónimo",
+                ci_driver: p.ci_driver || null,
+                driverName: p.ci_driver ? (userMap[p.ci_driver] || p.ci_driver) : "Por Asignar",
+                num_acompañantes: p.num_acompañantes || 0,
+                placa_vehiculo: p.placa_vehiculo || null,
+                origen_id: p.origen_id,
+                origen_nombre: locationMap[p.origen_id] || "N/D",
+                destino_id: p.destino_id,
+                destino_nombre: locationMap[p.destino_id] || "N/D",
+                carga: p.carga || null,
+                descripcion: p.descripcion || null,
+                prioridad: p.prioridad,
+                estado: p.estado,
+                fecha: formatFecha(p.created_at)
+            }));
+        } catch (err) {
+            console.error("Error fetching all filtered petitions for export:", err);
+            return [];
+        }
+    };
+
     return {
         data,
         loading,
@@ -240,6 +312,7 @@ export function usePaginatePetitions({ initialPageSize = 4 } = {}) {
         nextPage: () => page < totalPages && setPage(p => p + 1),
         prevPage: () => page > 1 && setPage(p => p - 1),
         setPage,
-        stats
+        stats,
+        fetchFilteredAll
     };
 }
