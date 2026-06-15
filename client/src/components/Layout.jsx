@@ -50,6 +50,7 @@ export default function Layout() {
             case "/add-passenger":
             case "/add-driver":
             case "/add-car":
+            case "/update-profile":
                 return "Dashboard";
             case "/add-location":
                 return "Añadir Localizaciones";

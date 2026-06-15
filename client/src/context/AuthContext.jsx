@@ -276,6 +276,22 @@ export default function AuthProvider({ children }) {
         setCurrentUser(null);
     };
 
+    const updateCurrentUser = (userData) => {
+        setCurrentUser(prev => {
+            if (!prev) return null;
+            const updated = { ...prev, ...userData };
+            
+            // Persist the updated user in localStorage session
+            const storedSession = localStorage.getItem("ft_admin_session");
+            if (storedSession) {
+                const sessionData = JSON.parse(storedSession);
+                sessionData.user = updated;
+                localStorage.setItem("ft_admin_session", JSON.stringify(sessionData));
+            }
+            return updated;
+        });
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen bg-[#FDF8F9] flex flex-col items-center justify-center p-4 select-none">
@@ -288,7 +304,7 @@ export default function AuthProvider({ children }) {
     }
 
     return (
-        <AuthContext.Provider value={{ currentUser, login, logout, register }}>
+        <AuthContext.Provider value={{ currentUser, login, logout, register, updateCurrentUser }}>
             {children}
         </AuthContext.Provider>
     );

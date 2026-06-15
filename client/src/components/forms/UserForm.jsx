@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Mail, Lock, User, Phone, Building, Loader2 } from "lucide-react";
 import Input from "../inputs/Input";
 
@@ -7,7 +7,10 @@ export default function UserForm({
     onCancel,
     isLoading = false,
     locations = [],
-    errorMsg = ""
+    errorMsg = "",
+    initialData = null,
+    isEdit = false,
+    hasExternalChanges = false
 }) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -15,6 +18,21 @@ export default function UserForm({
     const [ci, setCi] = useState("");
     const [telefono, setTelefono] = useState("");
     const [idGerencia, setIdGerencia] = useState("");
+
+    // Load initial data for editing
+    useEffect(() => {
+        if (initialData) {
+            setEmail(initialData.email || initialData.correo || "");
+            setFullName(
+                initialData.fullName || 
+                (initialData.primer_nombre ? `${initialData.primer_nombre} ${initialData.apellido || ""}`.trim() : "") || 
+                ""
+            );
+            setCi(initialData.ci || initialData.ci_user || "");
+            setTelefono(initialData.telefono || initialData.telf || "");
+            setIdGerencia(initialData.idGerencia || initialData.id_gerencia || "");
+        }
+    }, [initialData]);
 
     // Errors state
     const [errors, setErrors] = useState({
@@ -34,18 +52,21 @@ export default function UserForm({
 
     // Validators
     const validateEmail = (val) => {
+        if (isEdit && !val) return "";
         if (!val) return "El correo electrónico es requerido.";
         if (!emailRegex.test(val)) return "El formato del correo electrónico no es válido.";
         return "";
     };
 
     const validatePassword = (val) => {
+        if (isEdit && !val) return ""; // Password is optional when editing
         if (!val) return "La contraseña es requerida.";
         if (!passwordRegex.test(val)) return "La contraseña debe tener al menos 6 caracteres.";
         return "";
     };
 
     const validateFullName = (val) => {
+        if (isEdit && !val) return "";
         if (!val) return "El nombre completo es requerido.";
         const trimmed = val.trim();
         if (trimmed.split(/\s+/).length < 2) return "Ingrese el nombre completo (mínimo nombre y apellido).";
@@ -54,12 +75,14 @@ export default function UserForm({
     };
 
     const validateCi = (val) => {
+        if (isEdit && !val) return "";
         if (!val) return "La cédula de identidad es requerida.";
         if (!ciRegex.test(val)) return "La cédula debe contener entre 6 y 9 dígitos.";
         return "";
     };
 
     const validateTelefono = (val) => {
+        if (isEdit && !val) return "";
         if (!val) return "El número telefónico es requerido.";
         const stripped = val.replace(/[\s\-+]/g, "");
         if (!/^\d{10,15}$/.test(stripped)) return "El teléfono debe contener entre 10 y 15 dígitos numéricos.";
@@ -67,14 +90,28 @@ export default function UserForm({
     };
 
     const validateGerencia = (val) => {
+        if (isEdit && !val) return "";
         if (!val) return "Debe seleccionar una gerencia o departamento.";
         return "";
     };
 
     // Form validation check
-    const isFormFilled = email && password && fullName && ci && telefono && idGerencia;
+    const isFormFilled = isEdit || (email && password && fullName && ci && telefono && idGerencia);
+    const isDirty = !isEdit || (
+        email !== (initialData?.email || initialData?.correo || "") ||
+        password !== "" ||
+        fullName !== (
+            initialData?.fullName || 
+            (initialData?.primer_nombre ? `${initialData.primer_nombre} ${initialData.apellido || ""}`.trim() : "") || 
+            ""
+        ) ||
+        ci !== (initialData?.ci || initialData?.ci_user || "") ||
+        telefono !== (initialData?.telefono || initialData?.telf || "") ||
+        idGerencia !== (initialData?.idGerencia || initialData?.id_gerencia || "") ||
+        hasExternalChanges
+    );
     const hasAnyError = !!(errors.email || errors.password || errors.fullName || errors.ci || errors.telefono || errors.idGerencia);
-    const isSubmitDisabled = !isFormFilled || hasAnyError || isLoading;
+    const isSubmitDisabled = !isFormFilled || !isDirty || hasAnyError || isLoading;
 
     // Submit handler
     const handleSubmit = (e) => {
@@ -130,7 +167,7 @@ export default function UserForm({
                 <Input
                     id="email"
                     label="CORREO ELECTRONICO"
-                    required
+                    required={!isEdit}
                     type="email"
                     value={email}
                     onChange={(e) => {
@@ -148,7 +185,7 @@ export default function UserForm({
                     <Input
                         id="password"
                         label="CONTRASEÑA"
-                        required
+                        required={!isEdit}
                         type="password"
                         value={password}
                         onChange={(e) => {
@@ -157,7 +194,7 @@ export default function UserForm({
                         }}
                         onBlur={() => setErrors(prev => ({ ...prev, password: validatePassword(password) }))}
                         error={errors.password}
-                        placeholder="Contraseña"
+                        placeholder={isEdit ? "Escriba una nueva contraseña (opcional)" : "Contraseña"}
                         icon={Lock}
                     />
                     <span className="absolute right-0 top-0 text-[10px] font-bold text-[#8A1538] hover:text-[#72102C] hover:underline cursor-pointer select-none transition-colors">
@@ -170,7 +207,7 @@ export default function UserForm({
                     <Input
                         id="fullName"
                         label="NOMBRE COMPLETO"
-                        required
+                        required={!isEdit}
                         value={fullName}
                         onChange={(e) => {
                             setFullName(e.target.value);
@@ -184,7 +221,7 @@ export default function UserForm({
                     <Input
                         id="ci"
                         label="CEDULA DE IDENTIDAD"
-                        required
+                        required={!isEdit}
                         value={ci}
                         onChange={(e) => {
                             setCi(e.target.value);
@@ -202,7 +239,7 @@ export default function UserForm({
                     <Input
                         id="telefono"
                         label="NUMERO TELEFONICO"
-                        required
+                        required={!isEdit}
                         value={telefono}
                         onChange={(e) => {
                             setTelefono(e.target.value);
@@ -220,7 +257,7 @@ export default function UserForm({
                             htmlFor="idGerencia" 
                             className="block text-xs font-semibold text-gray-700 mb-1.5 select-none"
                         >
-                            GERENCIA O DEPARTAMENTO <span className="text-[#8A1538] font-bold">*</span>
+                            GERENCIA O DEPARTAMENTO {!isEdit && <span className="text-[#8A1538] font-bold">*</span>}
                         </label>
                         
                         <div className="relative w-full">

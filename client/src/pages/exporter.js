@@ -12,4 +12,5 @@ export { default as Home } from "./auth/Home";
 export { default as AddPassenger } from "./auth/AddPassenger";
 export { default as AddCar } from "./auth/AddCar";
 export { default as AddDriver } from "./auth/AddDriver";
-export { default as AddLocation } from "./auth/AddLocation";
+export { default as AddLocation } from "./auth/AddLocation";
+export { default as UpdateAdminProfile } from "./auth/UpdateAdminProfile";

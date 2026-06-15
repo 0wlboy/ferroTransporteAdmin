@@ -1,7 +1,9 @@
 import { X, Mail } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 export default function UserProfileModal({ onClose, onLogout }) {
+    const navigate = useNavigate();
     const { currentUser } = useAuth();
 
     // Mock details matching the screenshot exactly if user details aren't loaded
@@ -77,7 +79,10 @@ export default function UserProfileModal({ onClose, onLogout }) {
                 {/* Action Buttons */}
                 <div className="w-full space-y-3">
                     <button 
-                        onClick={() => alert("Actualizar Perfil (Próximamente disponible)")}
+                        onClick={() => {
+                            onClose();
+                            navigate("/update-profile");
+                        }}
                         className="w-full py-2.5 bg-[#8a1538] hover:bg-[#72102c] text-white font-bold rounded-xl text-xs tracking-wider transition-all cursor-pointer shadow-md shadow-primary/10 hover:shadow-lg hover:shadow-primary/20"
                     >
                         Actualizar Perfil
