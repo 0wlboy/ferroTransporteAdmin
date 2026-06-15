@@ -42,7 +42,7 @@ export default function Layout() {
                 return "Peticiones";
             case "/passenger-view":
                 return "Pasajeros";
-            case "/driver-view":
+            case "/drivers-view":
                 return "Conductores";
             case "/vehicle-view":
                 return "Vehículos";

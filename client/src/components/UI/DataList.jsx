@@ -1,5 +1,5 @@
-import { Fragment } from "react";
-import { Search } from "lucide-react";
+import { Fragment, useState, useRef, useEffect } from "react";
+import { Search, ChevronDown } from "lucide-react";
 import Pagination from "./Pagination";
 
 /**
@@ -78,17 +78,11 @@ export default function DataList({
                                         {select.label}
                                     </span>
                                 )}
-                                <select
+                                <CustomSelect
                                     value={select.value}
-                                    onChange={(e) => select.onChange(e.target.value)}
-                                    className="w-full sm:w-auto text-xs font-bold text-gray-700 bg-white border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-primary cursor-pointer hover:bg-gray-50 transition-colors"
-                                >
-                                    {select.options.map((opt) => (
-                                        <option key={opt.value} value={opt.value}>
-                                            {opt.label}
-                                        </option>
-                                    ))}
-                                </select>
+                                    onChange={select.onChange}
+                                    options={select.options}
+                                />
                             </div>
                         ))}
                     </div>
@@ -267,3 +261,60 @@ export default function DataList({
         </div>
     );
 }
+
+/**
+ * Custom dropdown select component styling matches ExportDropdown.
+ */
+function CustomSelect({ value, onChange, options }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef(null);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const selectedOption = options.find((opt) => opt.value === value) || options[0];
+
+    return (
+        <div className="relative inline-block text-left w-full sm:w-auto" ref={dropdownRef}>
+            <button
+                type="button"
+                onClick={() => setIsOpen(!isOpen)}
+                className="flex items-center justify-between gap-2.5 w-full sm:w-auto px-4 py-2.5 bg-white border border-primary text-primary transition-all font-bold text-xs tracking-wider rounded-xl cursor-pointer shadow-xs hover:shadow-sm hover:bg-primary-light hover:text-primary text-left"
+            >
+                <span className="truncate">{selectedOption?.label?.toUpperCase() || ""}</span>
+                <ChevronDown className="w-4 h-4 text-primary shrink-0" />
+            </button>
+
+            {isOpen && (
+                <div className="absolute left-0 sm:right-0 sm:left-auto mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg py-1.5 z-30 animate-fade-in">
+                    {options.map((opt) => (
+                        <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => {
+                                onChange(opt.value);
+                                setIsOpen(false);
+                            }}
+                            className={`flex items-center w-full px-4 py-2.5 text-xs font-semibold transition-colors cursor-pointer text-left ${
+                                opt.value === value
+                                    ? "bg-primary-light text-primary font-bold"
+                                    : "text-gray-700 hover:bg-gray-55"
+                            }`}
+                        >
+                            <span className="truncate">{opt.label}</span>
+                        </button>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+

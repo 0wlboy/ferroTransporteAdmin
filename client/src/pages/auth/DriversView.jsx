@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePaginateDrivers } from "../../hooks/usePaginateDrivers";
 import StatCard from "../../components/cards/StatCard";
-import DriverDetails from "../../components/modals/DriverDetails";
 import DataList from "../../components/UI/DataList";
 import ExportDropdown from "../../components/UI/ExportDropdown";
 import { exportToExcel } from "../../../utils/excelExport";
@@ -15,7 +14,7 @@ import {
     CheckCircle
 } from "lucide-react";
 
-export default function DriverView() {
+export default function DriversView() {
     const navigate = useNavigate();
     const {
         data: drivers,
@@ -152,8 +151,8 @@ export default function DriverView() {
             render: (item) => (
                 <span
                     className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide border ${item.activo === true
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                            : "bg-gray-50 text-gray-700 border-gray-150"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                        : "bg-gray-50 text-gray-700 border-gray-150"
                         }`}
                 >
                     {item.activo ? "Activo" : "Inactivo"}
@@ -232,7 +231,7 @@ export default function DriverView() {
                         onExportExcel={handleExportExcel}
                     />
                     <button
-                        onClick={() => navigate("/add-driver")}
+                        onClick={() => navigate("/add-user")}
                         className="flex items-center gap-2 px-4 py-2.5 bg-primary border border-transparent text-white hover:bg-primary-hover transition-all font-bold text-xs tracking-wider rounded-xl cursor-pointer shadow-xs hover:shadow-sm"
                     >
                         <Plus className="w-4 h-4 text-white" />
@@ -319,13 +318,6 @@ export default function DriverView() {
                     itemTypeName: "conductores registrados",
                 }}
             />
-
-            {selectedDriver && (
-                <DriverDetails
-                    driver={selectedDriver}
-                    onClose={() => setSelectedDriver(null)}
-                />
-            )}
         </div>
     );
 }

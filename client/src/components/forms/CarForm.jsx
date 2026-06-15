@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Car, Loader2, User, Building, Mail } from "lucide-react";
 import Input from "../inputs/Input";
+import Select from "../inputs/Select";
 
 export default function CarForm({
     onSubmit,
@@ -246,88 +247,39 @@ export default function CarForm({
                         icon={Car}
                     />
 
-                    {/* Reusable Select styled exactly as our Input component */}
-                    <div className="flex flex-col w-full">
-                        <label
-                            htmlFor="maletero"
-                            className="block text-xs font-semibold text-gray-700 mb-1.5 select-none"
-                        >
-                            MALETERO {!isEdit && <span className="text-[#8A1538] font-bold">*</span>}
-                        </label>
-
-                        <div className="relative w-full">
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none flex items-center justify-center">
-                                <Building className="w-4.5 h-4.5 text-gray-400" />
-                            </div>
-                            <select
-                                id="maletero"
-                                value={maletero}
-                                onChange={(e) => {
-                                    setMaletero(e.target.value);
-                                    setErrors(prev => ({ ...prev, maletero: validateMaletero(e.target.value) }));
-                                }}
-                                onBlur={() => setErrors(prev => ({ ...prev, maletero: validateMaletero(maletero) }))}
-                                className={`w-full pl-11 pr-10 py-3 rounded-xl border text-sm transition-all focus:outline-none focus:ring-2 disabled:bg-gray-55 disabled:cursor-not-allowed cursor-pointer bg-[#F9FAFB] focus:bg-white text-gray-900 appearance-none ${errors.maletero
-                                    ? "border-red-500 focus:border-red-600 focus:ring-red-500/10 text-red-900"
-                                    : "border-gray-200 focus:border-[#8A1538] focus:ring-[#8A1538]/10 focus:text-gray-900"
-                                    }`}
-                            >
-                                <option value="">Seleccione una opción</option>
-                                <option value="Si">Si</option>
-                                <option value="No">No</option>
-                            </select>
-
-                            {/* Chevron Down helper for select */}
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none flex items-center justify-center">
-                                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </div>
-                        </div>
-
-                        {errors.maletero && (
-                            <span className="text-red-600 text-[10px] font-black mt-1 pl-1 leading-none select-none animate-fade-in">
-                                {errors.maletero}
-                            </span>
-                        )}
-                    </div>
+                    <Select
+                        id="maletero"
+                        label="MALETERO"
+                        required={!isEdit}
+                        value={maletero}
+                        onChange={(val) => {
+                            setMaletero(val);
+                            setErrors(prev => ({ ...prev, maletero: validateMaletero(val) }));
+                        }}
+                        onBlur={() => setErrors(prev => ({ ...prev, maletero: validateMaletero(maletero) }))}
+                        error={errors.maletero}
+                        icon={Building}
+                        placeholder="Seleccione una opción"
+                        options={[
+                            { value: "Si", label: "Si" },
+                            { value: "No", label: "No" }
+                        ]}
+                    />
                 </div>
 
                 {/* Driver select dropdown */}
-                <div className="flex flex-col w-full">
-                    <label
-                        htmlFor="ciDriver"
-                        className="block text-xs font-semibold text-gray-700 mb-1.5 select-none"
-                    >
-                        CONDUCTOR ASIGNADO
-                    </label>
-
-                    <div className="relative w-full">
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none flex items-center justify-center">
-                            <User className="w-4.5 h-4.5 text-gray-400" />
-                        </div>
-                        <select
-                            id="ciDriver"
-                            value={ciDriver}
-                            onChange={(e) => setCiDriver(e.target.value)}
-                            className="w-full pl-11 pr-10 py-3 rounded-xl border border-gray-200 text-sm transition-all focus:outline-none focus:ring-2 focus:border-[#8A1538] focus:ring-[#8A1538]/10 bg-[#F9FAFB] focus:bg-white text-gray-900 appearance-none cursor-pointer"
-                        >
-                            <option value="">Por asignar (sin conductor)</option>
-                            {drivers.map((d) => (
-                                <option key={d.ci_user} value={d.ci_user}>
-                                    {d.primer_nombre} {d.apellido} (CI: {d.ci_user})
-                                </option>
-                            ))}
-                        </select>
-
-                        {/* Chevron Down helper for select */}
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none flex items-center justify-center">
-                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
+                <Select
+                    id="ciDriver"
+                    label="CONDUCTOR ASIGNADO"
+                    value={ciDriver}
+                    onChange={setCiDriver}
+                    icon={User}
+                    placeholder="Por asignar (sin conductor)"
+                    options={drivers.map((d) => ({
+                        value: d.ci_user,
+                        label: `${d.primer_nombre} ${d.apellido} (CI: ${d.ci_user})`
+                    }))}
+                />
             </div>
 
             {/* Action Buttons Row */}

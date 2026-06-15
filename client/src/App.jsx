@@ -1,4 +1,4 @@
-import { CarView, DriverView, PassengerView, PetitionsView, LocationView, Login, Register, UserActivity, CarActivity, Home, AddPassenger, AddCar, AddDriver, AddLocation, UpdateAdminProfile, UpdateCar } from "./pages/exporter";
+import { CarView, DriversView, PassengerView, PetitionsView, LocationView, Login, Register, UserActivity, CarActivity, Home, AddCar, AddLocation, UpdateAdminProfile, UpdateCar, AddUser } from "./pages/exporter";
 import { Routes, Route, Navigate, BrowserRouter } from "react-router-dom";
 import Layout from "./components/Layout";
 import AuthProvider from "./context/AuthContext";
@@ -14,13 +14,12 @@ export default function App() {
             <Route path="" element={<Navigate to="home-view" replace />} />
             <Route path="home-view" element={<Home />} />
             <Route path="passenger-view" element={<PassengerView />} />
-            <Route path="add-passenger" element={<AddPassenger />} />
-            <Route path="driver-view" element={<DriverView />} />
-            <Route path="add-driver" element={<AddDriver />} />
+            <Route path="drivers-view" element={<DriversView />} />
             <Route path="vehicle-view" element={<CarView />} />
             <Route path="add-car" element={<AddCar />} />
             <Route path="petitions-view" element={<PetitionsView />} />
             <Route path="locations-view" element={<LocationView />} />
+            <Route path="add-user" element={<AddUser />} />
             <Route path="add-location" element={<AddLocation />} />
             <Route path="user-activity/:id" element={<UserActivity />} />
             <Route path="car-activity/:id" element={<CarActivity />} />

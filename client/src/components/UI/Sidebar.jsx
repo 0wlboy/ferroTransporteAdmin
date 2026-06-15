@@ -16,7 +16,7 @@ const navItems = [
     { to: "/home-view", label: "Home", icon: Home, end: true },
     { to: "/petitions-view", label: "Peticiones", icon: ClipboardList, end: false },
     { to: "/passenger-view", label: "Pasajeros", icon: Users, end: false },
-    { to: "/driver-view", label: "Conductores", icon: Truck, end: false },
+    { to: "/drivers-view", label: "Conductores", icon: Truck, end: false },
     { to: "/vehicle-view", label: "Vehículos", icon: Bus, end: false },
     { to: "/locations-view", label: "Localizaciones", icon: MapPin, end: false },
 ];

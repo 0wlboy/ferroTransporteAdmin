@@ -204,16 +204,6 @@ export default function PetitionDetails({ petition, onClose }) {
 
                 </div>
 
-                {/* Modal Footer (Cerrar Button) */}
-                <div className="px-8 py-5 border-t border-[#F3E8EB] bg-[#FCFCFD] flex justify-end">
-                    <button
-                        onClick={onClose}
-                        className="px-6 py-2.5 bg-[#8A1538] hover:bg-[#72102C] text-white text-xs font-extrabold tracking-wider uppercase rounded-xl shadow-md shadow-primary/10 hover:shadow-lg hover:shadow-primary/20 transition-all cursor-pointer"
-                    >
-                        Cerrar
-                    </button>
-                </div>
-
             </div>
         </div>
     );

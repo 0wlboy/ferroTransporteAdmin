@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Mail, Lock, User, Phone, Building, Loader2 } from "lucide-react";
 import Input from "../inputs/Input";
+import Select from "../inputs/Select";
 
 export default function UserForm({
     onSubmit,
@@ -18,14 +19,15 @@ export default function UserForm({
     const [ci, setCi] = useState("");
     const [telefono, setTelefono] = useState("");
     const [idGerencia, setIdGerencia] = useState("");
+    const [role, setRole] = useState("");
 
     // Load initial data for editing
     useEffect(() => {
         if (initialData) {
             setEmail(initialData.email || initialData.correo || "");
             setFullName(
-                initialData.fullName || 
-                (initialData.primer_nombre ? `${initialData.primer_nombre} ${initialData.apellido || ""}`.trim() : "") || 
+                initialData.fullName ||
+                (initialData.primer_nombre ? `${initialData.primer_nombre} ${initialData.apellido || ""}`.trim() : "") ||
                 ""
             );
             setCi(initialData.ci || initialData.ci_user || "");
@@ -95,14 +97,20 @@ export default function UserForm({
         return "";
     };
 
+    const validateRole = (val) => {
+        if (isEdit && !val) return "";
+        if (!val) return "Debe seleccionar un rol.";
+        return "";
+    };
+
     // Form validation check
     const isFormFilled = isEdit || (email && password && fullName && ci && telefono && idGerencia);
     const isDirty = !isEdit || (
         email !== (initialData?.email || initialData?.correo || "") ||
         password !== "" ||
         fullName !== (
-            initialData?.fullName || 
-            (initialData?.primer_nombre ? `${initialData.primer_nombre} ${initialData.apellido || ""}`.trim() : "") || 
+            initialData?.fullName ||
+            (initialData?.primer_nombre ? `${initialData.primer_nombre} ${initialData.apellido || ""}`.trim() : "") ||
             ""
         ) ||
         telefono !== (initialData?.telefono || initialData?.telf || "") ||
@@ -115,7 +123,7 @@ export default function UserForm({
     // Submit handler
     const handleSubmit = (e) => {
         e.preventDefault();
-        
+
         // Final checks
         const emailErr = validateEmail(email);
         const passErr = validatePassword(password);
@@ -196,10 +204,23 @@ export default function UserForm({
                         placeholder={isEdit ? "Escriba una nueva contraseña (opcional)" : "Contraseña"}
                         icon={Lock}
                     />
-                    <span className="absolute right-0 top-0 text-[10px] font-bold text-[#8A1538] hover:text-[#72102C] hover:underline cursor-pointer select-none transition-colors">
-                        ¿Olvido su Contraseña?
-                    </span>
                 </div>
+
+                <Select
+                    id="role"
+                    label="ROLE DE USUARIO"
+                    required={!isEdit}
+                    value={role}
+                    onChange={(val) => {
+                        setRole(val);
+                        setErrors(prev => ({ ...prev, role: validateRole(val) }));
+                    }}
+                    onBlur={() => setErrors(prev => ({ ...prev, role: validateRole(role) }))}
+                    error={errors.role}
+                    icon={Building}
+                    placeholder="Seleccione una opción"
+                    options={[{ value: "Pasajero", label: "Pasajero" }, { value: "Conductor", label: "Conductor" }]}
+                />
 
                 {/* Name and CI Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -251,55 +272,21 @@ export default function UserForm({
                         icon={Phone}
                     />
 
-                    {/* Reusable Select styled exactly as our Input component */}
-                    <div className="flex flex-col w-full">
-                        <label 
-                            htmlFor="idGerencia" 
-                            className="block text-xs font-semibold text-gray-700 mb-1.5 select-none"
-                        >
-                            GERENCIA O DEPARTAMENTO {!isEdit && <span className="text-[#8A1538] font-bold">*</span>}
-                        </label>
-                        
-                        <div className="relative w-full">
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none flex items-center justify-center">
-                                <Building className="w-4.5 h-4.5 text-gray-400" />
-                            </div>
-                            <select
-                                id="idGerencia"
-                                value={idGerencia}
-                                onChange={(e) => {
-                                    setIdGerencia(e.target.value);
-                                    setErrors(prev => ({ ...prev, idGerencia: validateGerencia(e.target.value) }));
-                                }}
-                                onBlur={() => setErrors(prev => ({ ...prev, idGerencia: validateGerencia(idGerencia) }))}
-                                className={`w-full pl-11 pr-10 py-3 rounded-xl border text-sm transition-all focus:outline-none focus:ring-2 disabled:bg-gray-55 disabled:cursor-not-allowed cursor-pointer bg-[#F9FAFB] focus:bg-white text-gray-900 appearance-none ${
-                                    errors.idGerencia
-                                        ? "border-red-500 focus:border-red-600 focus:ring-red-500/10 text-red-900"
-                                        : "border-gray-200 focus:border-[#8A1538] focus:ring-[#8A1538]/10 focus:text-gray-900"
-                                }`}
-                            >
-                                <option value="">Seleccione una opción</option>
-                                {locations.map((loc) => (
-                                    <option key={loc.id} value={loc.id}>
-                                        {loc.nombre}
-                                    </option>
-                                ))}
-                            </select>
-                            
-                            {/* Chevron Down helper for select */}
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none flex items-center justify-center">
-                                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </div>
-                        </div>
-                        
-                        {errors.idGerencia && (
-                            <span className="text-red-600 text-[10px] font-black mt-1 pl-1 leading-none select-none animate-fade-in">
-                                {errors.idGerencia}
-                            </span>
-                        )}
-                    </div>
+                    <Select
+                        id="idGerencia"
+                        label="GERENCIA O DEPARTAMENTO"
+                        required={!isEdit}
+                        value={idGerencia}
+                        onChange={(val) => {
+                            setIdGerencia(val);
+                            setErrors(prev => ({ ...prev, idGerencia: validateGerencia(val) }));
+                        }}
+                        onBlur={() => setErrors(prev => ({ ...prev, idGerencia: validateGerencia(idGerencia) }))}
+                        error={errors.idGerencia}
+                        icon={Building}
+                        placeholder="Seleccione una opción"
+                        options={locations.map(loc => ({ value: loc.id, label: loc.nombre }))}
+                    />
                 </div>
             </div>
 

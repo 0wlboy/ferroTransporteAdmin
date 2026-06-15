@@ -1,5 +1,5 @@
 
-export { default as DriverView } from "./auth/DriverView";
+export { default as DriversView } from "./auth/DriversView";
 export { default as PassengerView } from "./auth/PassengerView";
 export { default as PetitionsView } from "./auth/PetitionsView";
 export { default as Login } from "./public/Login";
@@ -9,9 +9,9 @@ export { default as UserActivity } from "./auth/UserActivity";
 export { default as CarActivity } from "./auth/CarActivity";
 export { default as CarView } from "./auth/CarView";
 export { default as Home } from "./auth/Home";
-export { default as AddPassenger } from "./auth/AddPassenger";
 export { default as AddCar } from "./auth/AddCar";
-export { default as AddDriver } from "./auth/AddDriver";
 export { default as AddLocation } from "./auth/AddLocation";
 export { default as UpdateAdminProfile } from "./auth/UpdateAdminProfile";
-export { default as UpdateCar } from "./auth/UpdateCar";
+export { default as UpdateCar } from "./auth/UpdateCar";
+export { default as AddUser } from "./auth/AddUser"
+

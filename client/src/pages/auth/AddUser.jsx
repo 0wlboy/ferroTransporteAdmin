@@ -6,7 +6,7 @@ import UserForm from "../../components/forms/UserForm";
 import ImagePicker from "../../components/inputs/ImgPicker";
 import { User } from "lucide-react"
 
-export default function AddPassenger() {
+export default function AddUser() {
     const navigate = useNavigate();
     const { locations } = useGetLocations();
     const { addUser, loading, error } = useAddUser();
@@ -15,20 +15,19 @@ export default function AddPassenger() {
     const handleFormSubmit = async (formData) => {
         const result = await addUser(
             {
-                ...formData,
-                role: "Pasajero"
+                ...formData
             },
             avatarFile
         );
 
         if (result.success) {
             // Navigate back to the passengers view on successful creation
-            navigate("/passenger-view");
+            navigate("/home-view");
         }
     };
 
     const handleCancel = () => {
-        navigate("/passenger-view");
+        navigate("/home-view");
     };
 
     return (
@@ -36,7 +35,7 @@ export default function AddPassenger() {
             {/* Header Section */}
             <div className="flex flex-col gap-1">
                 <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">
-                    Añadir Nuevo Pasajero
+                    Añadir Nuevo Usuario
                 </h1>
                 <p className="text-gray-400 text-xs font-semibold tracking-wide">
                     Administra tu información personal y preferencias de seguridad.
@@ -60,6 +59,7 @@ export default function AddPassenger() {
                 <div className="bg-white rounded-2xl border border-[#F3E8EB] p-8 shadow-sm flex flex-col items-center justify-center min-h-[300px]">
                     <div className="flex flex-col items-center gap-4 text-center">
                         <ImagePicker
+                            shape="rounded-full"
                             icon={User}
                             bucketName="fotosPerfil"
                             placeholderType="user"

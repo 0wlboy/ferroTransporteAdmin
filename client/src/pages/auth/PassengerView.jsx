@@ -119,8 +119,8 @@ export default function PassengerView() {
             render: (item) => (
                 <span
                     className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide border ${item.activo === true
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                            : "bg-gray-50 text-gray-700 border-gray-150"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                        : "bg-gray-50 text-gray-700 border-gray-150"
                         }`}
                 >
                     {item.activo ? "Activo" : "Inactivo"}
@@ -199,7 +199,7 @@ export default function PassengerView() {
                         onExportExcel={handleExportExcel}
                     />
                     <button
-                        onClick={() => navigate("/add-passenger")}
+                        onClick={() => navigate("/add-user")}
                         className="flex items-center gap-2 px-4 py-2.5 bg-primary border border-transparent text-white hover:bg-primary-hover transition-all font-bold text-xs tracking-wider rounded-xl cursor-pointer shadow-xs hover:shadow-sm"
                     >
                         <Plus className="w-4 h-4 text-white" />

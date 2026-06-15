@@ -5,7 +5,7 @@ import { supabase, supabaseUrl, supabaseAnonKey } from "../../utils/supabase";
 const sendEmailNotification = async (email, password, fullName) => {
     // Simulate API network latency
     await new Promise(resolve => setTimeout(resolve, 1500));
-    
+
     // Log the mock email contents using stylized console logs for clarity
     console.log(
         `%c[SIMULACIÓN DE ENVÍO DE CORREO]
@@ -33,7 +33,7 @@ export function useAddUser() {
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
 
-    const addUser = async ({ email, password, fullName, ci, telefono, idGerencia, role = "Pasajero" }, avatarFile) => {
+    const addUser = async ({ email, password, fullName, ci, telefono, idGerencia, role }, avatarFile) => {
         setLoading(true);
         setError(null);
         setSuccess(false);
