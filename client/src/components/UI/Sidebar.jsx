@@ -21,7 +21,7 @@ const navItems = [
     { to: "/locations-view", label: "Localizaciones", icon: MapPin, end: false },
 ];
 
-export default function Sidebar({ collapsed, setMobileOpen, handleLogout }) {
+export default function Sidebar({ collapsed, setMobileOpen }) {
     const { currentUser, logout } = useAuth();
 
     return (
