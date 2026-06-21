@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Outlet, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Sidebar from "./UI/Sidebar";
@@ -10,8 +10,24 @@ export default function Layout() {
     const navigate = useNavigate();
     const location = useLocation();
     const [collapsed, setCollapsed] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth < 1024) {
+                setCollapsed(true);
+            } else {
+                setCollapsed(false);
+            }
+        };
+
+        window.addEventListener("resize", handleResize);
+        handleResize(); // Initialize on mount
+
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
 
     if (!currentUser) {
         return <Navigate to="/" replace />;
@@ -67,14 +83,31 @@ export default function Layout() {
         <div className="flex h-screen bg-main-bg overflow-hidden font-sans antialiased text-gray-800">
             {/* Desktop Sidebar */}
             <aside
-                className={`hidden md:flex flex-col bg-white border-r border-[#F3E8EB] transition-all duration-300 shrink-0 ${collapsed ? "w-20" : "w-64"
-                    }`}
+                className={`hidden md:flex flex-col bg-white shrink-0 transition-all duration-300 ${
+                    collapsed ? "w-20" : "w-64"
+                } relative z-30`}
+                onMouseEnter={() => collapsed && setIsHovered(true)}
+                onMouseLeave={() => {
+                    if (collapsed) {
+                        setIsHovered(false);
+                    }
+                }}
             >
-                <Sidebar
-                    collapsed={collapsed}
-                    setMobileOpen={setMobileOpen}
-                    handleLogout={handleLogout}
-                />
+                <div
+                    className={`flex flex-col h-full bg-sidebar-bg border-r border-[#F3E8EB] transition-all duration-300 ${
+                        collapsed
+                            ? isHovered
+                                ? "w-64 absolute left-0 top-0 z-40 shadow-2xl h-screen"
+                                : "w-20"
+                            : "w-64"
+                    }`}
+                >
+                    <Sidebar
+                        collapsed={collapsed && !isHovered}
+                        setMobileOpen={setMobileOpen}
+                        handleLogout={handleLogout}
+                    />
+                </div>
             </aside>
 
             {/* Mobile Sidebar Overlay */}
@@ -100,7 +133,6 @@ export default function Layout() {
                 <Header
                     title={getHeaderTitle()}
                     collapsed={collapsed}
-                    setCollapsed={setCollapsed}
                     mobileOpen={mobileOpen}
                     setMobileOpen={setMobileOpen}
                     onProfileClick={() => setIsProfileOpen(true)}

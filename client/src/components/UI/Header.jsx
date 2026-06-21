@@ -16,13 +16,7 @@ export default function Header({ title, collapsed, setCollapsed, mobileOpen, set
                     {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                 </button>
 
-                {/* Desktop Menu Toggle */}
-                <button
-                    className="hidden md:flex text-gray-500 hover:text-primary transition-colors cursor-pointer p-1 rounded-lg hover:bg-gray-50"
-                    onClick={() => setCollapsed(!collapsed)}
-                >
-                    <Menu className="w-5 h-5" />
-                </button>
+
 
                 {/* Page Title */}
                 <h2 className="text-[#8A1538] font-bold text-sm md:text-base tracking-wide pl-2">
