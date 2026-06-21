@@ -3,17 +3,21 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../../../utils/supabase";
 import { useUpdateCar } from "../../hooks/useUpdateCar";
 import CarForm from "../../components/forms/CarForm";
-import { Car, Loader2, ArrowLeft } from "lucide-react";
+import DeleteModal from "../../components/modals/DeleteModal";
+import { Car, Loader2, ArrowLeft, Trash2 } from "lucide-react";
 
 export default function UpdateCar() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { updateCar, loading: updating, error: updateError } = useUpdateCar();
+    const { updateCar, loading: updating, error: updateError, deleteVehicle, deleting } = useUpdateCar();
 
     // Vehicle and drivers state
     const [vehicleProfile, setVehicleProfile] = useState(null);
     const [loadingProfile, setLoadingProfile] = useState(true);
     const [drivers, setDrivers] = useState([]);
+
+    // Delete modal state
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     // Avatar / Photo upload state
     const [carImageFile, setCarImageFile] = useState(null);
@@ -47,12 +51,12 @@ export default function UpdateCar() {
                     }
                 }
 
-                // 2. Fetch active drivers for dropdown assignment
+                // 2. Fetch drivers for dropdown assignment (all non-deleted conductors)
                 const { data: driversData, error: dError } = await supabase
                     .from("usuarios")
                     .select("ci_user, primer_nombre, apellido")
                     .eq("role", "Conductor")
-                    .eq("activo", true)
+                    .neq("deleted", true)
                     .order("primer_nombre", { ascending: true });
 
                 if (dError) {
@@ -73,20 +77,31 @@ export default function UpdateCar() {
     const handleFormSubmit = async (formData) => {
         if (!id) return;
 
-        const result = await updateCar(
-            id,
-            formData,
-            carImageFile
-        );
+        const result = await updateCar(id, formData, carImageFile);
 
         if (result.success) {
-            // Navigate back to the vehicle activity view
-            navigate(`/car-activity/${id}`);
+            navigate("/vehicle-view", { replace: true });
         }
     };
 
     const handleCancel = () => {
         navigate(-1);
+    };
+
+    const handleDeleteClick = () => {
+        setShowDeleteModal(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!id) return;
+        const result = await deleteVehicle(id);
+        if (result.success) {
+            navigate("/vehicle-view", { replace: true });
+        }
+    };
+
+    const handleDeleteCancel = () => {
+        setShowDeleteModal(false);
     };
 
     const handleFileChange = (e) => {
@@ -183,9 +198,35 @@ export default function UpdateCar() {
                                 Admite imágenes JPG, PNG o WEBP. Se recomienda una vista clara del vehículo.
                             </p>
                         </div>
+
+                        {/* Separator */}
+                        <div className="w-full border-t border-[#F3E8EB]" />
+
+                        {/* Delete Vehicle Button */}
+                        <button
+                            type="button"
+                            onClick={handleDeleteClick}
+                            className="flex items-center gap-2 px-6 py-2.5 bg-white hover:bg-red-50 border border-red-200 hover:border-red-300 text-red-600 font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all w-full justify-center"
+                        >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Eliminar Vehículo</span>
+                        </button>
+                        <p className="text-[10px] text-gray-400 font-semibold max-w-[200px] mx-auto leading-normal -mt-3">
+                            El vehículo será marcado como eliminado y no aparecerá en el sistema.
+                        </p>
                     </div>
                 </div>
             </div>
+
+            {/* Delete Vehicle Modal */}
+            {showDeleteModal && (
+                <DeleteModal
+                    userName={vehicleProfile?.placa || "este vehículo"}
+                    isLoading={deleting}
+                    onConfirm={handleDeleteConfirm}
+                    onCancel={handleDeleteCancel}
+                />
+            )}
         </div>
     );
 }

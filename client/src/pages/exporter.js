@@ -17,6 +17,7 @@ export { default as AddUser } from "./auth/AddUser";
 export { default as UpdateUser } from "./auth/UpdateUser";
 export { default as RecoveryEmail } from "./public/RecoveryEmail";
 export { default as ResetPassword } from "./public/ResetPassword";
+export { default as UpdateLocation } from "./auth/UpdateLocation";
 
 
 

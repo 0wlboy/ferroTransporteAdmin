@@ -8,8 +8,10 @@ export function useUpdateCar() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const [deleteError, setDeleteError] = useState(null);
 
-    const updateCar = async (vehicleId, { placa, marca, modelo, year, numPuestos, maletero, ci_driver }, carImageFile) => {
+    const updateCar = async (vehicleId, { placa, marca, modelo, year, numPuestos, maletero, ci_driver, estado }, carImageFile) => {
         setLoading(true);
         setError(null);
         setSuccess(false);
@@ -65,7 +67,8 @@ export function useUpdateCar() {
                 num_asientos: numPuestos ? parseInt(numPuestos, 10) : undefined,
                 maletero_amplio: maletero ? (maletero === "Si") : undefined,
                 foto_url: fotoUrl,
-                ci_driver: ci_driver === "" ? null : ci_driver // allow unassigning
+                ci_driver: ci_driver === "" ? null : ci_driver, // allow unassigning
+                estado: estado || undefined
             };
 
             // Clean undefined fields so we only update active values
@@ -75,22 +78,17 @@ export function useUpdateCar() {
                 }
             });
 
-            const { data: updatedVehicle, error: updateError } = await supabase
+            const { error: updateError } = await supabase
                 .from("vehiculos")
                 .update(updatePayload)
-                .eq("id", vehicleId)
-                .select()
-                .single();
+                .eq("id", vehicleId);
 
             if (updateError) {
                 throw new Error("Error al actualizar el vehículo en la base de datos: " + updateError.message);
             }
 
             setSuccess(true);
-            return {
-                success: true,
-                vehicle: updatedVehicle
-            };
+            return { success: true };
         } catch (err) {
             console.error("Error in useUpdateCar hook:", err);
             setError(err.message || "Ocurrió un error inesperado al actualizar el vehículo.");
@@ -100,10 +98,41 @@ export function useUpdateCar() {
         }
     };
 
+    /**
+     * Marca un vehículo como eliminado (soft delete) poniendo deleted = true.
+     * @param {string|number} vehicleId — id de la fila en la tabla 'vehiculos'.
+     * @returns {{ success: boolean, error?: string }}
+     */
+    const deleteVehicle = async (vehicleId) => {
+        setDeleting(true);
+        setDeleteError(null);
+        try {
+            const { error: updateError } = await supabase
+                .from("vehiculos")
+                .update({ deleted: true, ci_driver: null })
+                .eq("id", vehicleId);
+
+            if (updateError) {
+                throw new Error("Error al eliminar el vehículo: " + updateError.message);
+            }
+
+            return { success: true };
+        } catch (err) {
+            console.error("Error in deleteVehicle:", err);
+            setDeleteError(err.message || "Ocurrió un error al eliminar el vehículo.");
+            return { success: false, error: err.message };
+        } finally {
+            setDeleting(false);
+        }
+    };
+
     return {
         updateCar,
         loading,
         error,
-        success
+        success,
+        deleteVehicle,
+        deleting,
+        deleteError
     };
 }

@@ -9,6 +9,8 @@ export function useUpdateUser() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const [deleteError, setDeleteError] = useState(null);
 
     const updateUser = async (userId, { email, password, fullName, ci, telefono, idGerencia, role }, avatarFile) => {
         setLoading(true);
@@ -100,28 +102,30 @@ export function useUpdateUser() {
             if (email) updatePayload.email = email;
             if (role) updatePayload.role = role;
 
-            const { data: updatedUser, error: updateError } = await supabase
+            const { error: updateError } = await supabase
                 .from("usuarios")
                 .update(updatePayload)
-                .eq("id", userId)
-                .select()
-                .single();
+                .eq("id", userId);
 
             if (updateError) {
                 throw new Error("Error al actualizar la base de datos: " + updateError.message);
             }
 
+            // Build return object from in-memory data (avoids RLS issues with .select() on update)
+            const finalEmail = email || dbUser.email;
+            const finalRole  = role  || dbUser.role;
+
             setSuccess(true);
             return {
                 success: true,
                 user: {
-                    id: updatedUser.id,
-                    email: updatedUser.email,
-                    name: `${updatedUser.primer_nombre || ""} ${updatedUser.apellido || ""}`.trim(),
-                    role: updatedUser.role,
-                    ci: updatedUser.ci_user,
-                    avatar: updatedUser.foto_url,
-                    id_gerencia: updatedUser.id_gerencia
+                    id: userId,
+                    email: finalEmail,
+                    name: `${primerNombre} ${apellido}`.trim(),
+                    role: finalRole,
+                    ci: ci,
+                    avatar: fotoUrl,
+                    id_gerencia: idGerencia || null
                 }
             };
         } catch (err) {
@@ -133,10 +137,42 @@ export function useUpdateUser() {
         }
     };
 
+    /**
+     * Marca un usuario como eliminado (soft delete) poniendo deleted = true.
+     * @param {string|number} userId  — id de la fila en la tabla 'usuarios'.
+     * @param {string}        userRole — role del usuario ("Pasajero" | "Conductor"), evita una query extra.
+     * @returns {{ success: boolean, role?: string, error?: string }}
+     */
+    const deleteUser = async (userId, userRole) => {
+        setDeleting(true);
+        setDeleteError(null);
+        try {
+            const { error: updateError } = await supabase
+                .from("usuarios")
+                .update({ deleted: true })
+                .eq("id", userId);
+
+            if (updateError) {
+                throw new Error("Error al eliminar el usuario: " + updateError.message);
+            }
+
+            return { success: true, role: userRole };
+        } catch (err) {
+            console.error("Error in deleteUser:", err);
+            setDeleteError(err.message || "Ocurrió un error al eliminar el usuario.");
+            return { success: false, error: err.message };
+        } finally {
+            setDeleting(false);
+        }
+    };
+
     return {
         updateUser,
         loading,
         error,
-        success
+        success,
+        deleteUser,
+        deleting,
+        deleteError
     };
 }

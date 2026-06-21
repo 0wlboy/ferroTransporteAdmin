@@ -88,7 +88,8 @@ export function useHomeStats() {
                 const { data: drivers, error: driversError } = await supabase
                     .from("usuarios")
                     .select("activo")
-                    .eq("role", "Conductor");
+                    .eq("role", "Conductor")
+                    .neq("deleted", true);
 
                 // Vehicles count
                 const { data: vehicles, error: vehiclesError } = await supabase
@@ -104,12 +105,14 @@ export function useHomeStats() {
                 const { data: todayPetitions, error: todayPetitionsError } = await supabase
                     .from("peticiones")
                     .select("estado, prioridad, created_at")
-                    .gte("created_at", startOfTodayISO);
+                    .gte("created_at", startOfTodayISO)
+                    .neq("deleted", true);
 
                 // Recent petitions (limit 10)
                 const { data: rawRecent, error: recentError } = await supabase
                     .from("peticiones")
                     .select("*")
+                    .neq("deleted", true)
                     .order("created_at", { ascending: false })
                     .limit(10);
 
@@ -197,6 +200,7 @@ export function useHomeStats() {
                         .eq("prioridad", "Alta")
                         .neq("estado", "Completado")
                         .neq("estado", "Cancelado")
+                        .neq("deleted", true)
                         .limit(5);
 
                     if (!urgError && fetchedUrgent) {

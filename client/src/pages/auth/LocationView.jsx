@@ -52,7 +52,7 @@ export default function LocationView() {
     };
 
     const handleEdit = (location) => {
-        alert(`Editar localización: ${location.nombre} (ID: ${location.id})`);
+        navigate(`/update-location/${location.id}`);
     };
 
     const handleDelete = (id) => {

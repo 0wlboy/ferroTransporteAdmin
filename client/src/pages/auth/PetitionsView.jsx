@@ -32,7 +32,9 @@ export default function PetitionsView() {
         prevPage,
         setPage,
         stats,
-        fetchFilteredAll
+        fetchFilteredAll,
+        deletePetition,
+        deleting
     } = usePaginatePetitions({ initialPageSize: 4 });
 
     const handlePrintPDF = async () => {
@@ -332,6 +334,13 @@ export default function PetitionsView() {
                 <PetitionDetails
                     petition={selectedPetition}
                     onClose={() => setSelectedPetition(null)}
+                    onDelete={async (id) => {
+                        const result = await deletePetition(id);
+                        if (result.success) {
+                            setSelectedPetition(null);
+                        }
+                    }}
+                    isDeleting={deleting}
                 />
             )}
         </div>

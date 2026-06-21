@@ -35,6 +35,11 @@ export function usePaginatePetitions({ initialPageSize = 4 } = {}) {
     const [statusFilter, setStatusFilter] = useState("all");
     const [sortBy, setSortBy] = useState("fecha_desc");
 
+    // Deletion and refetch states
+    const [refetchTrigger, setRefetchTrigger] = useState(0);
+    const [deleting, setDeleting] = useState(false);
+    const [deleteError, setDeleteError] = useState(null);
+
     // Estadísticas para las tarjetas
     const [stats, setStats] = useState({
         pendingTotal: 0,
@@ -56,7 +61,7 @@ export function usePaginatePetitions({ initialPageSize = 4 } = {}) {
                 const to = from + pageSize - 1;
 
                 // 1. Obtener peticiones filtradas y ordenadas
-                let query = supabase.from("peticiones").select("*", { count: "exact" });
+                let query = supabase.from("peticiones").select("*", { count: "exact" }).neq("deleted", true);
 
                 if (searchTerm.trim() !== "") {
                     const term = `%${searchTerm.trim()}%`;
@@ -76,7 +81,7 @@ export function usePaginatePetitions({ initialPageSize = 4 } = {}) {
                 else if (sortBy === "prioridad_desc") query = query.order("prioridad", { ascending: false });
 
                 // 2. Obtener estadísticas globales y diarias
-                const statsQuery = supabase.from("peticiones").select("estado, created_at");
+                const statsQuery = supabase.from("peticiones").select("estado, created_at").neq("deleted", true);
 
                 // Ejecutamos la paginación y la obtención de estadísticas en paralelo
                 const [listResult, statsResult] = await Promise.all([
@@ -212,7 +217,7 @@ export function usePaginatePetitions({ initialPageSize = 4 } = {}) {
         };
 
         fetchPetitions();
-    }, [page, pageSize, searchTerm, statusFilter, sortBy]);
+    }, [page, pageSize, searchTerm, statusFilter, sortBy, refetchTrigger]);
 
     // Reiniciar paginación al cambiar filtros
     useEffect(() => {
@@ -224,7 +229,7 @@ export function usePaginatePetitions({ initialPageSize = 4 } = {}) {
 
     const fetchFilteredAll = async () => {
         try {
-            let query = supabase.from("peticiones").select("*");
+            let query = supabase.from("peticiones").select("*").neq("deleted", true);
 
             if (searchTerm.trim() !== "") {
                 const term = `%${searchTerm.trim()}%`;
@@ -294,6 +299,34 @@ export function usePaginatePetitions({ initialPageSize = 4 } = {}) {
         }
     };
 
+    const deletePetition = async (petitionId) => {
+        setDeleting(true);
+        setDeleteError(null);
+        try {
+            if (!petitionId) {
+                throw new Error("Se requiere el ID de la petición para eliminarla.");
+            }
+
+            const { error: updateError } = await supabase
+                .from("peticiones")
+                .update({ deleted: true })
+                .eq("id", petitionId);
+
+            if (updateError) {
+                throw new Error("Error al eliminar la petición: " + updateError.message);
+            }
+
+            setRefetchTrigger(prev => prev + 1);
+            return { success: true };
+        } catch (err) {
+            console.error("Error in deletePetition:", err);
+            setDeleteError(err.message || "Ocurrió un error al eliminar la petición.");
+            return { success: false, error: err.message };
+        } finally {
+            setDeleting(false);
+        }
+    };
+
     return {
         data,
         loading,
@@ -313,6 +346,9 @@ export function usePaginatePetitions({ initialPageSize = 4 } = {}) {
         prevPage: () => page > 1 && setPage(p => p - 1),
         setPage,
         stats,
-        fetchFilteredAll
+        fetchFilteredAll,
+        deletePetition,
+        deleting,
+        deleteError
     };
 }

@@ -1,4 +1,4 @@
-import { CarView, DriversView, PassengerView, PetitionsView, LocationView, Login, Register, UserActivity, CarActivity, Home, AddCar, AddLocation, UpdateAdminProfile, UpdateCar, AddUser, UpdateUser, RecoveryEmail, ResetPassword } from "./pages/exporter";
+import { CarView, DriversView, PassengerView, PetitionsView, LocationView, Login, Register, UserActivity, CarActivity, Home, AddCar, AddLocation, UpdateAdminProfile, UpdateCar, AddUser, UpdateUser, RecoveryEmail, ResetPassword, UpdateLocation } from "./pages/exporter";
 import { Routes, Route, Navigate, BrowserRouter } from "react-router-dom";
 import Layout from "./components/Layout";
 import AuthProvider from "./context/AuthContext";
@@ -28,6 +28,7 @@ export default function App() {
             <Route path="update-profile" element={<UpdateAdminProfile />} />
             <Route path="update-car/:id" element={<UpdateCar />} />
             <Route path="update-user/:id" element={<UpdateUser />} />
+            <Route path="update-location/:id" element={<UpdateLocation />} />
           </Route>
 
         </Routes>

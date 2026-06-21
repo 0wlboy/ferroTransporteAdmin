@@ -20,6 +20,7 @@ export default function CarForm({
     const [numPuestos, setNumPuestos] = useState("");
     const [maletero, setMaletero] = useState("Si");
     const [ciDriver, setCiDriver] = useState("");
+    const [estado, setEstado] = useState("");
 
     // Load initial data for editing
     useEffect(() => {
@@ -31,6 +32,7 @@ export default function CarForm({
             setNumPuestos(initialData.num_asientos?.toString() || initialData.numPuestos?.toString() || "");
             setMaletero(initialData.maletero_amplio === true || initialData.maletero === "Si" ? "Si" : "No");
             setCiDriver(initialData.ci_driver || "");
+            setEstado(initialData.estado || "");
         }
     }, [initialData]);
 
@@ -104,6 +106,7 @@ export default function CarForm({
         numPuestos !== (initialData?.num_asientos?.toString() || initialData?.numPuestos?.toString() || "") ||
         (maletero === "Si") !== (initialData?.maletero_amplio === true) ||
         ciDriver !== (initialData?.ci_driver || "") ||
+        estado !== (initialData?.estado || "") ||
         hasExternalChanges
     );
     const hasAnyError = !!(errors.placa || errors.marca || errors.modelo || errors.year || errors.numPuestos || errors.maletero);
@@ -140,7 +143,8 @@ export default function CarForm({
             modelo,
             year,
             numPuestos,
-            maletero
+            maletero,
+            estado: estado || null
         });
     };
 
@@ -279,6 +283,21 @@ export default function CarForm({
                         value: d.ci_user,
                         label: `${d.primer_nombre} ${d.apellido} (CI: ${d.ci_user})`
                     }))}
+                />
+
+                {/* Estado del vehículo */}
+                <Select
+                    id="estado"
+                    label="ESTADO DEL VEHÍCULO"
+                    value={estado}
+                    onChange={setEstado}
+                    icon={Building}
+                    placeholder="Seleccione un estado"
+                    options={[
+                        { value: "Operativo", label: "Operativo" },
+                        { value: "En Taller", label: "En Taller" },
+                        { value: "Inoperativo", label: "Inoperativo" },
+                    ]}
                 />
             </div>
 

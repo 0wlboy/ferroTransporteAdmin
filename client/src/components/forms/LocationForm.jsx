@@ -1,17 +1,31 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Loader2, Crosshair } from "lucide-react";
 import Input from "../inputs/Input";
+import Select from "../inputs/Select";
 
 export default function LocationForm({
     onSubmit,
     onCancel,
     isLoading = false,
     errorMsg = "",
-    onCoordinatesChange
+    onCoordinatesChange,
+    isEdit = false,
+    initialData = null
 }) {
     const [name, setName] = useState("");
     const [lng, setLng] = useState("");
     const [lat, setLat] = useState("");
+    const [activo, setActivo] = useState(true);
+
+    useEffect(() => {
+        if (initialData) {
+            setName(initialData.nombre || "");
+            setLat(initialData.lat?.toString() || "");
+            setLng(initialData.lng?.toString() || "");
+            setActivo(initialData.activo !== undefined ? initialData.activo : true);
+        }
+    }, [initialData]);
+
 
     // Errors state
     const [errors, setErrors] = useState({
@@ -50,8 +64,16 @@ export default function LocationForm({
 
     // Form validation check
     const isFormFilled = name && lng && lat;
+    
+    // Check if the form has changes compared to initial data when editing
+    const isDirty = !isEdit ||
+        name.trim() !== (initialData?.nombre || "") ||
+        parseFloat(lat) !== (initialData?.lat || 0) ||
+        parseFloat(lng) !== (initialData?.lng || 0) ||
+        activo !== (initialData?.activo !== undefined ? initialData.activo : true);
+
     const hasAnyError = !!(errors.name || errors.lng || errors.lat);
-    const isSubmitDisabled = !isFormFilled || hasAnyError || isLoading;
+    const isSubmitDisabled = !isFormFilled || !isDirty || hasAnyError || isLoading;
 
     // Submit handler
     const handleSubmit = (e) => {
@@ -74,7 +96,8 @@ export default function LocationForm({
         onSubmit({
             name,
             lng,
-            lat
+            lat,
+            activo
         });
     };
 
@@ -145,6 +168,21 @@ export default function LocationForm({
                         icon={Crosshair}
                     />
                 </div>
+
+                {isEdit && (
+                    <Select
+                        id="activo"
+                        label="ESTADO DE LA LOCALIZACIÓN"
+                        required
+                        value={activo ? "true" : "false"}
+                        onChange={(val) => setActivo(val === "true")}
+                        placeholder="Seleccione el estado"
+                        options={[
+                            { value: "true", label: "Activo" },
+                            { value: "false", label: "Inactivo" }
+                        ]}
+                    />
+                )}
             </div>
 
             {/* Action Buttons Row */}

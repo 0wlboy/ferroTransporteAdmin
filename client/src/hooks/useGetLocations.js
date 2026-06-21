@@ -5,7 +5,7 @@ export default function useGetLocations() {
     const [locations, setLocations] = useState([]);
 
     useEffect(() => {
-        supabase.from("localizaciones").select("*").then((result) => {
+        supabase.from("localizaciones").select("*").neq("deleted", true).then((result) => {
             if (result.error) {
                 console.error(result.error);
             } else {

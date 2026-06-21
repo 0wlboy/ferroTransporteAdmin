@@ -2,18 +2,18 @@ import { useState, useEffect } from "react";
 import { supabase } from "../../utils/supabase";
 
 const formatFecha = (dateString) => {
-    if (!dateString) return "";
-    const d = new Date(dateString);
-    if (isNaN(d.getTime())) return dateString;
+  if (!dateString) return "";
+  const d = new Date(dateString);
+  if (isNaN(d.getTime())) return dateString;
 
-    const day = d.getDate().toString().padStart(2, "0");
-    const month = (d.getMonth() + 1).toString().padStart(2, "0");
-    const year = d.getFullYear();
+  const day = d.getDate().toString().padStart(2, "0");
+  const month = (d.getMonth() + 1).toString().padStart(2, "0");
+  const year = d.getFullYear();
 
-    const hours = d.getHours().toString().padStart(2, "0");
-    const minutes = d.getMinutes().toString().padStart(2, "0");
+  const hours = d.getHours().toString().padStart(2, "0");
+  const minutes = d.getMinutes().toString().padStart(2, "0");
 
-    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
 };
 
 /**
@@ -21,291 +21,330 @@ const formatFecha = (dateString) => {
  * Resuelve los nombres de conductores y vehiculos consultando la tabla 'usuarios'.
  */
 export function usePaginateDrivers({ initialPageSize = 4 } = {}) {
-    const [data, setData] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-    // Paginación
-    const [page, setPage] = useState(1);
-    const [pageSize, setPageSize] = useState(initialPageSize);
-    const [totalItems, setTotalItems] = useState(0);
+  // Paginación
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(initialPageSize);
+  const [totalItems, setTotalItems] = useState(0);
 
-    // Filtros y Ordenamiento
-    const [searchTerm, setSearchTerm] = useState("");
-    const [statusFilter, setStatusFilter] = useState("all");
-    const [sortBy, setSortBy] = useState("fecha_desc");
+  // Filtros y Ordenamiento
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("fecha_desc");
 
-    // Estadísticas para las tarjetas
-    const [stats, setStats] = useState({
-        activosTotal: 0,
-        activosToday: 0,
-        inactivosTotal: 0,
-        inactivosToday: 0,
-        totalToday: 0,
-        totalThisMonth: 0,
-        totalConductores: 0
-    });
+  // Estadísticas para las tarjetas
+  const [stats, setStats] = useState({
+    activosTotal: 0,
+    activosToday: 0,
+    inactivosTotal: 0,
+    inactivosToday: 0,
+    totalToday: 0,
+    totalThisMonth: 0,
+    totalConductores: 0,
+  });
 
-    useEffect(() => {
-        const fetchDrivers = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                // Rango de paginación (0-indexed)
-                const from = (page - 1) * pageSize;
-                const to = from + pageSize - 1;
+  useEffect(() => {
+    const fetchDrivers = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // Rango de paginación (0-indexed)
+        const from = (page - 1) * pageSize;
+        const to = from + pageSize - 1;
 
-                // 1. Obtener vehículos filtrados y ordenados
-                let query = supabase.from("usuarios").select("*", { count: "exact" }).eq("role", "Conductor");
+        // 1. Obtener usuarios filtrados y ordenados
+        let query = supabase
+          .from("usuarios")
+          .select("*", { count: "exact" })
+          .eq("role", "Conductor")
+          .neq("deleted", true);
 
-                if (searchTerm.trim() !== "") {
-                    const term = `%${searchTerm.trim()}%`;
-                    query = query.or(`ci_user.ilike.${term},primer_nombre.ilike.${term},apellido.ilike.${term}`);
-                }
-
-                if (statusFilter !== "all") {
-                    query = query.eq("activo", statusFilter);
-                }
-
-                if (sortBy === "fecha_asc") query = query.order("created_at", { ascending: true });
-                else if (sortBy === "fecha_desc") query = query.order("created_at", { ascending: false });
-                else if (sortBy === "nombre_asc") query = query.order("primer_nombre", { ascending: true });
-                else if (sortBy === "nombre_desc") query = query.order("primer_nombre", { ascending: false });
-                else if (sortBy === "apellido_asc") query = query.order("apellido", { ascending: true });
-                else if (sortBy === "apellido_desc") query = query.order("apellido", { ascending: false });
-
-                // 2. Obtener estadísticas globales y diarias
-                const statsQuery = supabase.from("usuarios").select("activo, created_at").eq("role", "Conductor");
-
-                // Ejecutamos la paginación y la obtención de estadísticas en paralelo
-                const [listResult, statsResult] = await Promise.all([
-                    query.range(from, to),
-                    statsQuery
-                ]);
-
-                if (listResult.error) throw listResult.error;
-                if (statsResult.error) throw statsResult.error;
-
-                const users = listResult.data || [];
-                const count = listResult.count || 0;
-                const allUsersForStats = statsResult.data || [];
-
-                // Calcular contadores en memoria
-                const todayStr = new Date().toDateString();
-                const now = new Date();
-                const currentMonth = now.getMonth();
-                const currentYear = now.getFullYear();
-
-                let activosTotal = 0;
-                let activosToday = 0;
-                let inactivosTotal = 0;
-                let inactivosToday = 0;
-                let totalToday = 0;
-                let totalThisMonth = 0;
-
-                allUsersForStats.forEach(v => {
-                    const statusLower = v.activo;
-                    const createdDate = v.created_at ? new Date(v.created_at) : null;
-                    const isToday = createdDate ? createdDate.toDateString() === todayStr : false;
-                    const isThisMonth = createdDate ? (createdDate.getMonth() === currentMonth && createdDate.getFullYear() === currentYear) : false;
-
-                    if (statusLower === true) {
-                        activosTotal++;
-                        if (isToday) activosToday++;
-                    } else if (statusLower === false) {
-                        inactivosTotal++;
-                        if (isToday) inactivosToday++;
-                    }
-
-                    if (isToday) {
-                        totalToday++;
-                    }
-                    if (isThisMonth) {
-                        totalThisMonth++;
-                    }
-                });
-
-                const totalConductores = allUsersForStats.length;
-
-                setStats({
-                    activosTotal,
-                    activosToday,
-                    inactivosTotal,
-                    inactivosToday,
-                    totalToday,
-                    totalThisMonth,
-                    totalConductores
-                });
-
-                if (users.length === 0) {
-                    setData([]);
-                    setTotalItems(0);
-                    return;
-                }
-
-                // 3. Obtener nombre de localizacion de la tabla 'localizacion' a partir de los id_gerencias
-                const id_gerencias = [...new Set(users.flatMap(u => [u.id_gerencia]).filter(Boolean))];
-                const localizacionMap = {};
-
-                if (id_gerencias.length > 0) {
-                    const { data: localizaciones, error: lError } = await supabase
-                        .from("localizaciones")
-                        .select("id, nombre")
-                        .in("id", id_gerencias);
-
-                    if (lError) throw lError;
-
-                    localizaciones?.forEach(loc => {
-                        localizacionMap[loc.id] = loc.nombre;
-                    });
-                }
-
-                // 3. Obtener nombre de localizacion de la tabla 'localizacion' a partir de los id_gerencias
-                const ci_drivers = [...new Set(users.flatMap(u => [u.ci_user]).filter(Boolean))];
-                const vehiculosMap = {};
-                const vehiculoFoto = {};
-
-                if (ci_drivers.length > 0) {
-                    const { data: vehiculos, error: lError } = await supabase
-                        .from("vehiculos")
-                        .select("ci_driver, placa, foto_url")
-                        .in("ci_driver", ci_drivers);
-
-                    if (lError) throw lError;
-
-                    vehiculos?.forEach(car => {
-                        vehiculosMap[car.ci_driver] = car.placa;
-                        vehiculoFoto[car.ci_driver] = car.foto_url;
-                    });
-                }
-
-
-
-                // 4. Mapear datos finales combinando usuarios y localizaciones
-                const formatted = users.map(u => ({
-                    id: u.id,
-                    nombre: u.primer_nombre || u.nombre || null,
-                    apellido: u.apellido || null,
-                    correo: u.email || null,
-                    telefono: u.telf || null,
-                    foto_url: u.foto_url || null,
-                    ci_user: u.ci_user || null,
-                    id_gerencia: u.id_gerencia || null,
-                    activo: u.activo || null,
-                    fecha: formatFecha(u.created_at),
-                    localizacion: localizacionMap[u.id_gerencia] || null,
-                    vehiculo_placa: vehiculosMap[u.ci_user] || null,
-                    vehiculo_foto: vehiculoFoto[u.ci_user] || null
-                }));
-
-                setData(formatted);
-                setTotalItems(count || 0);
-            } catch (err) {
-                console.error("Error en usePaginateVehicles:", err);
-                setError(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchDrivers();
-    }, [page, pageSize, searchTerm, statusFilter, sortBy]);
-
-    // Reiniciar paginación al cambiar filtros
-    useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setPage(1);
-    }, [searchTerm, statusFilter, sortBy]);
-
-    const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-
-    const fetchFilteredAll = async () => {
-        try {
-            let query = supabase.from("usuarios").select("*").eq("role", "Conductor");
-
-            if (searchTerm.trim() !== "") {
-                const term = `%${searchTerm.trim()}%`;
-                query = query.or(`ci_user.ilike.${term},primer_nombre.ilike.${term},apellido.ilike.${term}`);
-            }
-
-            if (statusFilter !== "all") {
-                query = query.eq("activo", statusFilter);
-            }
-
-            if (sortBy === "fecha_asc") query = query.order("created_at", { ascending: true });
-            else if (sortBy === "fecha_desc") query = query.order("created_at", { ascending: false });
-            else if (sortBy === "nombre_asc") query = query.order("primer_nombre", { ascending: true });
-            else if (sortBy === "nombre_desc") query = query.order("primer_nombre", { ascending: false });
-            else if (sortBy === "apellido_asc") query = query.order("apellido", { ascending: true });
-            else if (sortBy === "apellido_desc") query = query.order("apellido", { ascending: false });
-
-            const { data: users, error: listError } = await query;
-            if (listError) throw listError;
-            if (!users || users.length === 0) return [];
-
-            const id_gerencias = [...new Set(users.flatMap(u => [u.id_gerencia]).filter(Boolean))];
-            const localizacionMap = {};
-            if (id_gerencias.length > 0) {
-                const { data: localizaciones, error: lError } = await supabase
-                    .from("localizaciones")
-                    .select("id, nombre")
-                    .in("id", id_gerencias);
-                if (lError) throw lError;
-                localizaciones?.forEach(loc => {
-                    localizacionMap[loc.id] = loc.nombre;
-                });
-            }
-
-            const ci_drivers = [...new Set(users.flatMap(u => [u.ci_user]).filter(Boolean))];
-            const vehiculosMap = {};
-            if (ci_drivers.length > 0) {
-                const { data: vehiculos, error: vError } = await supabase
-                    .from("vehiculos")
-                    .select("ci_driver, placa")
-                    .in("ci_driver", ci_drivers);
-                if (vError) throw vError;
-                vehiculos?.forEach(car => {
-                    vehiculosMap[car.ci_driver] = car.placa;
-                });
-            }
-
-            return users.map(u => ({
-                id: u.id,
-                nombre: u.primer_nombre || u.nombre || null,
-                apellido: u.apellido || null,
-                correo: u.email || null,
-                telefono: u.telf || null,
-                ci_user: u.ci_user || null,
-                activo: u.activo || null,
-                fecha: formatFecha(u.created_at),
-                localizacion: localizacionMap[u.id_gerencia] || null,
-                vehiculo_placa: vehiculosMap[u.ci_user] || null
-            }));
-        } catch (err) {
-            console.error("Error fetching all filtered drivers for export:", err);
-            return [];
+        if (searchTerm.trim() !== "") {
+          const term = `%${searchTerm.trim()}%`;
+          query = query.or(
+            `ci_user.ilike.${term},primer_nombre.ilike.${term},apellido.ilike.${term}`,
+          );
         }
+
+        if (statusFilter !== "all") {
+          query = query.eq("activo", statusFilter);
+        }
+
+        if (sortBy === "fecha_asc")
+          query = query.order("created_at", { ascending: true });
+        else if (sortBy === "fecha_desc")
+          query = query.order("created_at", { ascending: false });
+        else if (sortBy === "nombre_asc")
+          query = query.order("primer_nombre", { ascending: true });
+        else if (sortBy === "nombre_desc")
+          query = query.order("primer_nombre", { ascending: false });
+        else if (sortBy === "apellido_asc")
+          query = query.order("apellido", { ascending: true });
+        else if (sortBy === "apellido_desc")
+          query = query.order("apellido", { ascending: false });
+
+        // 2. Obtener estadísticas globales y diarias
+        const statsQuery = supabase
+          .from("usuarios")
+          .select("activo, created_at")
+          .eq("role", "Conductor")
+          .neq("deleted", true);
+
+        // Ejecutamos la paginación y la obtención de estadísticas en paralelo
+        const [listResult, statsResult] = await Promise.all([
+          query.range(from, to),
+          statsQuery,
+        ]);
+
+        if (listResult.error) throw listResult.error;
+        if (statsResult.error) throw statsResult.error;
+
+        const users = listResult.data || [];
+        const count = listResult.count || 0;
+        const allUsersForStats = statsResult.data || [];
+
+        // Calcular contadores en memoria
+        const todayStr = new Date().toDateString();
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+
+        let activosTotal = 0;
+        let activosToday = 0;
+        let inactivosTotal = 0;
+        let inactivosToday = 0;
+        let totalToday = 0;
+        let totalThisMonth = 0;
+
+        allUsersForStats.forEach((v) => {
+          const statusLower = v.activo;
+          const createdDate = v.created_at ? new Date(v.created_at) : null;
+          const isToday = createdDate
+            ? createdDate.toDateString() === todayStr
+            : false;
+          const isThisMonth = createdDate
+            ? createdDate.getMonth() === currentMonth &&
+              createdDate.getFullYear() === currentYear
+            : false;
+
+          if (statusLower === true) {
+            activosTotal++;
+            if (isToday) activosToday++;
+          } else if (statusLower === false) {
+            inactivosTotal++;
+            if (isToday) inactivosToday++;
+          }
+
+          if (isToday) {
+            totalToday++;
+          }
+          if (isThisMonth) {
+            totalThisMonth++;
+          }
+        });
+
+        const totalConductores = allUsersForStats.length;
+
+        setStats({
+          activosTotal,
+          activosToday,
+          inactivosTotal,
+          inactivosToday,
+          totalToday,
+          totalThisMonth,
+          totalConductores,
+        });
+
+        if (users.length === 0) {
+          setData([]);
+          setTotalItems(0);
+          return;
+        }
+
+        // 3. Obtener nombre de localizacion de la tabla 'localizacion' a partir de los id_gerencias
+        const id_gerencias = [
+          ...new Set(users.flatMap((u) => [u.id_gerencia]).filter(Boolean)),
+        ];
+        const localizacionMap = {};
+
+        if (id_gerencias.length > 0) {
+          const { data: localizaciones, error: lError } = await supabase
+            .from("localizaciones")
+            .select("id, nombre")
+            .in("id", id_gerencias);
+
+          if (lError) throw lError;
+
+          localizaciones?.forEach((loc) => {
+            localizacionMap[loc.id] = loc.nombre;
+          });
+        }
+
+        // 3. Obtener nombre de localizacion de la tabla 'localizacion' a partir de los id_gerencias
+        const ci_drivers = [
+          ...new Set(users.flatMap((u) => [u.ci_user]).filter(Boolean)),
+        ];
+        const vehiculosMap = {};
+        const vehiculoFoto = {};
+
+        if (ci_drivers.length > 0) {
+          const { data: vehiculos, error: lError } = await supabase
+            .from("vehiculos")
+            .select("ci_driver, placa, foto_url")
+            .in("ci_driver", ci_drivers);
+
+          if (lError) throw lError;
+
+          vehiculos?.forEach((car) => {
+            vehiculosMap[car.ci_driver] = car.placa;
+            vehiculoFoto[car.ci_driver] = car.foto_url;
+          });
+        }
+
+        // 4. Mapear datos finales combinando usuarios y localizaciones
+        const formatted = users.map((u) => ({
+          id: u.id,
+          nombre: u.primer_nombre || u.nombre || null,
+          apellido: u.apellido || null,
+          correo: u.email || null,
+          telefono: u.telf || null,
+          foto_url: u.foto_url || null,
+          ci_user: u.ci_user || null,
+          id_gerencia: u.id_gerencia || null,
+          activo: u.activo || null,
+          fecha: formatFecha(u.created_at),
+          localizacion: localizacionMap[u.id_gerencia] || null,
+          vehiculo_placa: vehiculosMap[u.ci_user] || null,
+          vehiculo_foto: vehiculoFoto[u.ci_user] || null,
+        }));
+
+        setData(formatted);
+        setTotalItems(count || 0);
+      } catch (err) {
+        console.error("Error en usePaginateVehicles:", err);
+        setError(err);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    return {
-        data,
-        loading,
-        error,
-        page,
-        totalPages,
-        totalItems,
-        pageSize,
-        setPageSize,
-        searchTerm,
-        setSearchTerm,
-        statusFilter,
-        setStatusFilter,
-        sortBy,
-        setSortBy,
-        nextPage: () => page < totalPages && setPage(p => p + 1),
-        prevPage: () => page > 1 && setPage(p => p - 1),
-        setPage,
-        stats,
-        fetchFilteredAll
-    };
+    fetchDrivers();
+  }, [page, pageSize, searchTerm, statusFilter, sortBy]);
+
+  // Reiniciar paginación al cambiar filtros
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPage(1);
+  }, [searchTerm, statusFilter, sortBy]);
+
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+
+  const fetchFilteredAll = async () => {
+    try {
+      let query = supabase
+        .from("usuarios")
+        .select("*")
+        .eq("role", "Conductor")
+        .neq("deleted", true);
+
+      if (searchTerm.trim() !== "") {
+        const term = `%${searchTerm.trim()}%`;
+        query = query.or(
+          `ci_user.ilike.${term},primer_nombre.ilike.${term},apellido.ilike.${term}`,
+        );
+      }
+
+      if (statusFilter !== "all") {
+        query = query.eq("activo", statusFilter);
+      }
+
+      if (sortBy === "fecha_asc")
+        query = query.order("created_at", { ascending: true });
+      else if (sortBy === "fecha_desc")
+        query = query.order("created_at", { ascending: false });
+      else if (sortBy === "nombre_asc")
+        query = query.order("primer_nombre", { ascending: true });
+      else if (sortBy === "nombre_desc")
+        query = query.order("primer_nombre", { ascending: false });
+      else if (sortBy === "apellido_asc")
+        query = query.order("apellido", { ascending: true });
+      else if (sortBy === "apellido_desc")
+        query = query.order("apellido", { ascending: false });
+
+      const { data: users, error: listError } = await query;
+      if (listError) throw listError;
+      if (!users || users.length === 0) return [];
+
+      const id_gerencias = [
+        ...new Set(users.flatMap((u) => [u.id_gerencia]).filter(Boolean)),
+      ];
+      const localizacionMap = {};
+      if (id_gerencias.length > 0) {
+        const { data: localizaciones, error: lError } = await supabase
+          .from("localizaciones")
+          .select("id, nombre")
+          .in("id", id_gerencias);
+        if (lError) throw lError;
+        localizaciones?.forEach((loc) => {
+          localizacionMap[loc.id] = loc.nombre;
+        });
+      }
+
+      const ci_drivers = [
+        ...new Set(users.flatMap((u) => [u.ci_user]).filter(Boolean)),
+      ];
+      const vehiculosMap = {};
+      if (ci_drivers.length > 0) {
+        const { data: vehiculos, error: vError } = await supabase
+          .from("vehiculos")
+          .select("ci_driver, placa")
+          .in("ci_driver", ci_drivers);
+        if (vError) throw vError;
+        vehiculos?.forEach((car) => {
+          vehiculosMap[car.ci_driver] = car.placa;
+        });
+      }
+
+      return users.map((u) => ({
+        id: u.id,
+        nombre: u.primer_nombre || u.nombre || null,
+        apellido: u.apellido || null,
+        correo: u.email || null,
+        telefono: u.telf || null,
+        ci_user: u.ci_user || null,
+        activo: u.activo || null,
+        fecha: formatFecha(u.created_at),
+        localizacion: localizacionMap[u.id_gerencia] || null,
+        vehiculo_placa: vehiculosMap[u.ci_user] || null,
+      }));
+    } catch (err) {
+      console.error("Error fetching all filtered drivers for export:", err);
+      return [];
+    }
+  };
+
+  return {
+    data,
+    loading,
+    error,
+    page,
+    totalPages,
+    totalItems,
+    pageSize,
+    setPageSize,
+    searchTerm,
+    setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    sortBy,
+    setSortBy,
+    nextPage: () => page < totalPages && setPage((p) => p + 1),
+    prevPage: () => page > 1 && setPage((p) => p - 1),
+    setPage,
+    stats,
+    fetchFilteredAll,
+  };
 }
