@@ -163,7 +163,23 @@ export default function AuthProvider({ children }) {
     };
 
     const register = async (email, password, userData = {}) => {
-        // 1. Sign up the user in Supabase Auth
+        // 1. Check uniqueness of ci_user in the database before calling Auth signUp
+        if (userData.ci) {
+            const { data: existingCi, error: ciCheckError } = await supabase
+                .from("usuarios")
+                .select("id")
+                .eq("ci_user", userData.ci)
+                .maybeSingle();
+
+            if (ciCheckError) {
+                throw new Error("Error al verificar la cédula de identidad: " + ciCheckError.message);
+            }
+            if (existingCi) {
+                throw new Error("La cédula de identidad ingresada ya está registrada en el sistema.");
+            }
+        }
+
+        // 2. Sign up the user in Supabase Auth
         const { data, error } = await supabase.auth.signUp({
             email,
             password
@@ -178,7 +194,7 @@ export default function AuthProvider({ children }) {
             throw new Error("No se pudo crear el usuario.");
         }
 
-        // 2. Upload avatar file to Supabase Storage if provided
+        // 3. Upload avatar file to Supabase Storage if provided
         let fotoUrl = null;
         if (userData.avatarFile) {
             try {
@@ -206,7 +222,7 @@ export default function AuthProvider({ children }) {
             }
         }
 
-        // 3. Create the user profile in 'usuarios' table
+        // 4. Create the user profile in 'usuarios' table
         const { data: dbUser, error: dbError } = await supabase
             .from("usuarios")
             .insert({
@@ -227,7 +243,7 @@ export default function AuthProvider({ children }) {
             throw new Error("Error al guardar el perfil del usuario: " + dbError.message);
         }
 
-        // 4. Handle session auto-login if available, or force sign-in
+        // 5. Handle session auto-login if available, or force sign-in
         let session = data.session;
         if (!session) {
             // If Supabase did not return a session on signUp, try signing in immediately
@@ -260,7 +276,7 @@ export default function AuthProvider({ children }) {
         // Set immediate context state
         setCurrentUser(loggedInUser);
 
-        // 5. Store session in localStorage
+        // 6. Store session in localStorage
         const sessionData = {
             user: loggedInUser,
             timestamp: Date.now()

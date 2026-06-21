@@ -39,7 +39,21 @@ export function useAddUser() {
         setSuccess(false);
 
         try {
-            // 1. Create a secondary Supabase client instance with persistSession = false.
+            // 1. Check uniqueness of ci_user in the database before touching Auth
+            const { data: existingCi, error: ciCheckError } = await supabase
+                .from("usuarios")
+                .select("id")
+                .eq("ci_user", ci)
+                .maybeSingle();
+
+            if (ciCheckError) {
+                throw new Error("Error al verificar la cédula de identidad: " + ciCheckError.message);
+            }
+            if (existingCi) {
+                throw new Error("La cédula de identidad ingresada ya está registrada en el sistema.");
+            }
+
+            // 2. Create a secondary Supabase client instance with persistSession = false.
             // This is CRITICAL to bypass session synchronization, so creating a new user
             // does NOT log out the administrator from their current dashboard session.
             const tempClient = createClient(supabaseUrl, supabaseAnonKey, {
@@ -50,7 +64,7 @@ export function useAddUser() {
                 }
             });
 
-            // 2. Register user in Supabase Auth
+            // 3. Register user in Supabase Auth (only reached if ci_user is unique)
             const { data: authData, error: signUpError } = await tempClient.auth.signUp({
                 email,
                 password
@@ -65,7 +79,7 @@ export function useAddUser() {
                 throw new Error("No se pudo crear el usuario en el sistema de autenticación.");
             }
 
-            // 3. Upload avatar image if selected
+            // 4. Upload avatar image if selected
             let fotoUrl = null;
             if (avatarFile) {
                 try {
@@ -93,12 +107,12 @@ export function useAddUser() {
                 }
             }
 
-            // 4. Split fullName into primer_nombre and apellido
+            // 5. Split fullName into primer_nombre and apellido
             const nameParts = fullName.trim().split(/\s+/);
             const primerNombre = nameParts[0] || "";
             const apellido = nameParts.slice(1).join(" ") || "";
 
-            // 5. Insert user profile into public 'usuarios' table
+            // 6. Insert user profile into public 'usuarios' table
             const { error: insertError } = await supabase
                 .from("usuarios")
                 .insert({
@@ -118,7 +132,7 @@ export function useAddUser() {
                 throw new Error("Error al guardar el perfil del usuario: " + insertError.message);
             }
 
-            // 6. Simulate sending email with credentials
+            // 7. Simulate sending email with credentials
             await sendEmailNotification(email, password, fullName);
 
             setSuccess(true);

@@ -133,6 +133,7 @@ export default function UpdateAdminProfile() {
             initialData={adminProfile}
             isEdit={true}
             hasExternalChanges={!!avatarFile}
+            hideRole={true}
           />
         </div>
 

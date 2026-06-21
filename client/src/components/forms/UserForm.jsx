@@ -12,6 +12,7 @@ export default function UserForm({
   initialData = null,
   isEdit = false,
   hasExternalChanges = false,
+  hideRole = false,
 }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -241,26 +242,28 @@ export default function UserForm({
           />
         </div>
 
-        <Select
-          id="role"
-          label="ROLE DE USUARIO"
-          required={!isEdit}
-          value={role}
-          onChange={(val) => {
-            setRole(val);
-            setErrors((prev) => ({ ...prev, role: validateRole(val) }));
-          }}
-          onBlur={() =>
-            setErrors((prev) => ({ ...prev, role: validateRole(role) }))
-          }
-          error={errors.role}
-          icon={Building}
-          placeholder="Seleccione una opción"
-          options={[
-            { value: "Pasajero", label: "Pasajero" },
-            { value: "Conductor", label: "Conductor" },
-          ]}
-        />
+        {!hideRole && (
+          <Select
+            id="role"
+            label="ROLE DE USUARIO"
+            required={!isEdit}
+            value={role}
+            onChange={(val) => {
+              setRole(val);
+              setErrors((prev) => ({ ...prev, role: validateRole(val) }));
+            }}
+            onBlur={() =>
+              setErrors((prev) => ({ ...prev, role: validateRole(role) }))
+            }
+            error={errors.role}
+            icon={Building}
+            placeholder="Seleccione una opción"
+            options={[
+              { value: "Pasajero", label: "Pasajero" },
+              { value: "Conductor", label: "Conductor" },
+            ]}
+          />
+        )}
 
         {/* Name and CI Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
