@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../../utils/supabase";
 import Input from "../../components/inputs/Input";
@@ -11,6 +11,55 @@ export default function ResetPassword() {
     const [errorMsg, setErrorMsg] = useState("");
     const [success, setSuccess] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [hasSession, setHasSession] = useState(false);
+
+    useEffect(() => {
+        const checkSession = async () => {
+            setIsLoading(true);
+            try {
+                // 1. Check if a session already exists
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session) {
+                    setHasSession(true);
+                    setIsLoading(false);
+                    return;
+                }
+
+                // 2. Check if tokens are present in URL hash fragment
+                const hash = window.location.hash;
+                if (hash) {
+                    const params = new URLSearchParams(hash.substring(1));
+                    const accessToken = params.get("access_token");
+                    const refreshToken = params.get("refresh_token");
+
+                    if (accessToken && refreshToken) {
+                        const { error } = await supabase.auth.setSession({
+                            access_token: accessToken,
+                            refresh_token: refreshToken
+                        });
+
+                        if (error) {
+                            setErrorMsg("El enlace de recuperación es inválido o ha expirado.");
+                        } else {
+                            setHasSession(true);
+                        }
+                        setIsLoading(false);
+                        return;
+                    }
+                }
+
+                // 3. No session and no tokens in hash
+                setErrorMsg("No hay una sesión de recuperación activa. Por favor solicita un nuevo enlace.");
+            } catch (err) {
+                console.error("Error checking recovery session:", err);
+                setErrorMsg("Ocurrió un error al verificar la sesión de recuperación.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        checkSession();
+    }, []);
 
     const passwordRegex = /^.{6,}$/;
 
@@ -124,11 +173,12 @@ export default function ResetPassword() {
                             </div>
                         )}
 
-                        <Input
+                         <Input
                             id="password"
                             label="Nueva Contraseña"
                             type="password"
                             required
+                            disabled={!hasSession}
                             value={password}
                             onChange={handlePasswordChange}
                             onBlur={handlePasswordBlur}
@@ -141,6 +191,7 @@ export default function ResetPassword() {
                             label="Confirmar Contraseña"
                             type="password"
                             required
+                            disabled={!hasSession}
                             value={confirmPassword}
                             onChange={handleConfirmPasswordChange}
                             onBlur={handleConfirmPasswordBlur}
@@ -150,7 +201,7 @@ export default function ResetPassword() {
 
                         <button
                             type="submit"
-                            disabled={isLoading}
+                            disabled={isLoading || !hasSession}
                             className="w-full py-3 bg-[#8A1538] hover:bg-[#72102C] text-white font-semibold rounded-xl shadow-lg shadow-[#8A1538]/15 hover:shadow-xl hover:shadow-[#8A1538]/25 transition-all cursor-pointer text-sm flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed"
                         >
                             {isLoading ? (
