@@ -29,6 +29,8 @@ export default function PetitionsView() {
     fetchFilteredAll,
     deletePetition,
     deleting,
+    cancelPetition,
+    cancelling,
   } = usePaginatePetitions({ initialPageSize: 4 });
 
   const handlePrintPDF = async () => {
@@ -212,24 +214,6 @@ export default function PetitionsView() {
                 >
                   Ver Detalle
                 </button>
-                <button
-                  onClick={() => {
-                    alert(`Asignar conductor para ${item.id}`);
-                    setActiveMenuId(null);
-                  }}
-                  className="block w-full px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-primary-light hover:text-primary transition-colors cursor-pointer border-t border-gray-100"
-                >
-                  Asignar Conductor
-                </button>
-                <button
-                  onClick={() => {
-                    alert(`Cancelar petición ${item.id}`);
-                    setActiveMenuId(null);
-                  }}
-                  className="block w-full px-4 py-2 text-xs font-semibold text-red-650 hover:bg-red-50 transition-colors cursor-pointer border-t border-gray-100"
-                >
-                  Cancelar Viaje
-                </button>
               </div>
             </>
           )}
@@ -342,6 +326,13 @@ export default function PetitionsView() {
             }
           }}
           isDeleting={deleting}
+          onCancelPetition={async (id) => {
+            const result = await cancelPetition(id);
+            if (result.success) {
+              setSelectedPetition(null);
+            }
+          }}
+          isCancelling={cancelling}
         />
       )}
     </div>

@@ -35,10 +35,12 @@ export function usePaginatePetitions({ initialPageSize = 4 } = {}) {
     const [statusFilter, setStatusFilter] = useState("all");
     const [sortBy, setSortBy] = useState("fecha_desc");
 
-    // Deletion and refetch states
+    // Deletion, cancellation and refetch states
     const [refetchTrigger, setRefetchTrigger] = useState(0);
     const [deleting, setDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState(null);
+    const [cancelling, setCancelling] = useState(false);
+    const [cancelError, setCancelError] = useState(null);
 
     // Estadísticas para las tarjetas
     const [stats, setStats] = useState({
@@ -327,6 +329,34 @@ export function usePaginatePetitions({ initialPageSize = 4 } = {}) {
         }
     };
 
+    const cancelPetition = async (petitionId) => {
+        setCancelling(true);
+        setCancelError(null);
+        try {
+            if (!petitionId) {
+                throw new Error("Se requiere el ID de la petición para cancelarla.");
+            }
+
+            const { error: updateError } = await supabase
+                .from("peticiones")
+                .update({ estado: "Cancelado" })
+                .eq("id", petitionId);
+
+            if (updateError) {
+                throw new Error("Error al cancelar la petición: " + updateError.message);
+            }
+
+            setRefetchTrigger(prev => prev + 1);
+            return { success: true };
+        } catch (err) {
+            console.error("Error in cancelPetition:", err);
+            setCancelError(err.message || "Ocurrió un error al cancelar la petición.");
+            return { success: false, error: err.message };
+        } finally {
+            setCancelling(false);
+        }
+    };
+
     return {
         data,
         loading,
@@ -349,6 +379,9 @@ export function usePaginatePetitions({ initialPageSize = 4 } = {}) {
         fetchFilteredAll,
         deletePetition,
         deleting,
-        deleteError
+        deleteError,
+        cancelPetition,
+        cancelling,
+        cancelError
     };
 }

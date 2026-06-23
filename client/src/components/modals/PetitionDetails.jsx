@@ -1,4 +1,4 @@
-import { X, User, Calendar, Trash2 } from "lucide-react";
+import { X, User, Calendar, Trash2, XCircle } from "lucide-react";
 import { useState } from "react";
 import DeleteModal from "./DeleteModal";
 
@@ -7,10 +7,13 @@ export default function PetitionDetails({
   onClose,
   onDelete,
   isDeleting = false,
+  onCancelPetition,
+  isCancelling = false,
 }) {
-  if (!petition) return null;
-
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+
+  if (!petition) return null;
 
   const handleDeleteClick = () => {
     setShowDeleteModal(true);
@@ -25,6 +28,21 @@ export default function PetitionDetails({
 
   const handleDeleteCancel = () => {
     setShowDeleteModal(false);
+  };
+
+  const handleCancelClick = () => {
+    setShowCancelModal(true);
+  };
+
+  const handleCancelConfirm = () => {
+    if (onCancelPetition && petition.id) {
+      onCancelPetition(petition.id);
+    }
+    setShowCancelModal(false);
+  };
+
+  const handleCancelCancel = () => {
+    setShowCancelModal(false);
   };
 
   // Handle background click to close modal
@@ -249,12 +267,24 @@ export default function PetitionDetails({
           <button
             type="button"
             onClick={handleDeleteClick}
-            disabled={isDeleting}
+            disabled={isDeleting || isCancelling}
             className="flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-red-50 border border-red-200 hover:border-red-300 text-red-600 font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all disabled:opacity-50"
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span>Eliminar Petición</span>
           </button>
+
+          {petition.ci_driver && petition.estado !== "Cancelado" && petition.estado !== "Completado" && (
+            <button
+              type="button"
+              onClick={handleCancelClick}
+              disabled={isCancelling || isDeleting}
+              className="flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-red-50 border border-red-200 hover:border-red-300 text-red-600 font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all disabled:opacity-50"
+            >
+              <XCircle className="w-3.5 h-3.5" />
+              <span>Cancelar Petición</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -266,6 +296,58 @@ export default function PetitionDetails({
           onConfirm={handleDeleteConfirm}
           onCancel={handleDeleteCancel}
         />
+      )}
+
+      {/* Cancel Confirmation Modal */}
+      {showCancelModal && (
+        <>
+          <div
+            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
+            onClick={handleCancelCancel}
+          />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+            <div className="bg-white rounded-2xl border border-[#F3E8EB] shadow-2xl w-full max-w-md p-8 pointer-events-auto animate-in fade-in zoom-in-95 duration-150 relative">
+              <button
+                onClick={handleCancelCancel}
+                disabled={isCancelling}
+                className="absolute top-4 right-4 p-1 rounded-full text-gray-400 hover:text-gray-650 hover:bg-gray-100 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <div className="flex flex-col items-center text-center gap-5">
+                <div className="w-16 h-16 rounded-full bg-red-50 border border-red-100 flex items-center justify-center">
+                  <XCircle className="w-8 h-8 text-red-500" />
+                </div>
+                <div className="space-y-2">
+                  <h2 className="text-xl font-black text-gray-900 tracking-tight">
+                    ¿Cancelar petición?
+                  </h2>
+                  <p className="text-sm text-gray-500 font-medium leading-relaxed max-w-xs mx-auto">
+                    Estás a punto de cancelar la petición de{" "}
+                    <span className="font-bold text-gray-800">{petition.passengerName}</span>.
+                    El estado de la petición cambiará a <span className="font-bold text-red-600">Cancelado</span>.
+                  </p>
+                </div>
+                <div className="w-full flex flex-col sm:flex-row gap-3 pt-1">
+                  <button
+                    onClick={handleCancelCancel}
+                    disabled={isCancelling}
+                    className="flex-1 py-2.5 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    Volver
+                  </button>
+                  <button
+                    onClick={handleCancelConfirm}
+                    disabled={isCancelling}
+                    className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-md shadow-red-500/20 flex items-center justify-center gap-2 disabled:opacity-60"
+                  >
+                    Confirmar Cancelación
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
