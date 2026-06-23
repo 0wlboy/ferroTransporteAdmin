@@ -16,17 +16,36 @@ export default function AddCar() {
   useEffect(() => {
     const fetchDrivers = async () => {
       try {
-        const { data, error: driversError } = await supabase
+        // 1. Fetch all active conductors
+        const { data: conductors, error: driversError } = await supabase
           .from("usuarios")
           .select("ci_user, primer_nombre, apellido")
           .eq("role", "Conductor")
-          .eq("activo", true)
+          .neq("deleted", true)
           .order("primer_nombre", { ascending: true });
 
         if (driversError) {
           console.error("Error loading drivers:", driversError.message);
-        } else if (data) {
-          setDrivers(data);
+          return;
+        }
+
+        // 2. Fetch all drivers currently assigned to non-deleted vehicles
+        const { data: activeVehicles, error: vehiclesError } = await supabase
+          .from("vehiculos")
+          .select("ci_driver")
+          .neq("deleted", true)
+          .not("ci_driver", "is", null);
+
+        if (vehiclesError) {
+          console.error("Error loading active vehicles:", vehiclesError.message);
+          if (conductors) setDrivers(conductors);
+          return;
+        }
+
+        if (conductors && activeVehicles) {
+          const assignedDriverCis = new Set(activeVehicles.map(v => v.ci_driver));
+          const availableConductors = conductors.filter(c => !assignedDriverCis.has(c.ci_user));
+          setDrivers(availableConductors);
         }
       } catch (err) {
         console.error("Exception fetching drivers:", err);

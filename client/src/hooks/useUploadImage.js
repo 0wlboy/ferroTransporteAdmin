@@ -112,7 +112,8 @@ export default function useUploadImage() {
         bucket = "fotosPerfil",
         uniqueFileName = false,
         userAuthId,
-        upsert = true,
+        upsert = options.upsert !== undefined ? options.upsert : (bucket === "fotosVehiculos" ? false : true),
+        placa,
       } = options;
 
       setUploading(true);
@@ -122,6 +123,10 @@ export default function useUploadImage() {
       try {
         if (!image) {
           throw new Error("No se ha proporcionado ninguna imagen para subir.");
+        }
+
+        if (bucket === "fotosVehiculos" && !placa) {
+          throw new Error("La placa del vehículo es requerida para subir imágenes a este bucket.");
         }
 
         // ── 1. Determinar el nombre final y tipo del archivo ──
@@ -163,15 +168,21 @@ export default function useUploadImage() {
           throw new Error("Formato de imagen inválido.");
         }
 
-        const fileName = uniqueFileName
-          ? generateUniqueFileName(rawName)
-          : rawName;
+        let fileName;
+        if (bucket === "fotosVehiculos" && placa) {
+          const extension = rawName.split(".").pop() ?? "jpg";
+          fileName = `car_${placa.toUpperCase()}_${Date.now()}.${extension}`;
+        } else {
+          fileName = uniqueFileName
+            ? generateUniqueFileName(rawName)
+            : rawName;
+        }
 
         let folderPath = userAuthId;
 
-        // Si no se proporciona userAuthId, intentamos obtenerlo de la sesión activa
-        // para garantizar que cumple con la política RLS del bucket
-        if (!folderPath) {
+        // Si no se proporciona userAuthId y no es el bucket de vehículos,
+        // intentamos obtenerlo de la sesión activa para garantizar que cumple con la política RLS del bucket
+        if (!folderPath && bucket !== "fotosVehiculos") {
           const {
             data: { session },
           } = await supabase.auth.getSession();

@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { supabase } from "../../utils/supabase";
+import useUploadImage from "./useUploadImage";
 
 export function useAddCar() {
+    const { uploadImage } = useUploadImage();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
@@ -15,27 +17,13 @@ export function useAddCar() {
             // 1. Upload car image if provided
             let fotoUrl = null;
             if (carImageFile) {
-                try {
-                    const fileExt = carImageFile.name.split(".").pop();
-                    const fileName = `car_${placa.toUpperCase()}_${Date.now()}.${fileExt}`;
-
-                    const { error: uploadError } = await supabase.storage
-                        .from("fotosVehiculos")
-                        .upload(fileName, carImageFile, {
-                            cacheControl: "3600",
-                            upsert: true
-                        });
-
-                    if (uploadError) {
-                        console.error("Error uploading car image:", uploadError.message);
-                    } else {
-                        const { data: { publicUrl } } = supabase.storage
-                            .from("fotosVehiculos")
-                            .getPublicUrl(fileName);
-                        fotoUrl = publicUrl;
-                    }
-                } catch (uploadException) {
-                    console.error("Exception during car image upload:", uploadException);
+                fotoUrl = await uploadImage(carImageFile, {
+                    bucket: "fotosVehiculos",
+                    placa: placa,
+                    upsert: false
+                });
+                if (!fotoUrl) {
+                    throw new Error("No se pudo cargar la imagen del vehículo.");
                 }
             }
 
