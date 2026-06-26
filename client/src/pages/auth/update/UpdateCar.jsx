@@ -58,7 +58,7 @@ export default function UpdateCar() {
         }
 
         // 2. Fetch drivers for dropdown assignment (all non-deleted conductors)
-        const { data: driversData, error: dError } = await supabase
+        const { data: conductors, error: dError } = await supabase
           .from("usuarios")
           .select("ci_user, primer_nombre, apellido")
           .eq("role", "Conductor")
@@ -67,8 +67,32 @@ export default function UpdateCar() {
 
         if (dError) {
           console.error("Error loading drivers:", dError.message);
-        } else if (driversData) {
-          setDrivers(driversData);
+          return;
+        }
+
+        // 3. Fetch other assigned drivers
+        const { data: activeVehicles, error: vehiclesError } = await supabase
+          .from("vehiculos")
+          .select("ci_driver")
+          .neq("deleted", true)
+          .not("ci_driver", "is", null);
+
+        if (vehiclesError) {
+          console.error("Error loading active vehicles:", vehiclesError.message);
+          if (conductors) setDrivers(conductors);
+          return;
+        }
+
+        if (conductors && activeVehicles) {
+          const currentDriverCi = vehicle?.ci_driver;
+          // Filter out drivers assigned to other vehicles, keeping the one for this vehicle
+          const assignedDriverCis = new Set(
+            activeVehicles
+              .map(v => v.ci_driver)
+              .filter(ci => ci !== currentDriverCi)
+          );
+          const availableConductors = conductors.filter(c => !assignedDriverCis.has(c.ci_user));
+          setDrivers(availableConductors);
         }
       } catch (err) {
         console.error("Error fetching vehicle edit data:", err);

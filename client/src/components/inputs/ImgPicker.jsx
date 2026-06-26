@@ -11,7 +11,8 @@ export default function ImagePicker({
     onUploadComplete,
     onFileSelect,
     placeholderType = "user", // "user" or "vehicle"
-    className = ""
+    className = "",
+    placa
 }) {
     const [previewUrl, setPreviewUrl] = useState(initialImageUrl);
     const fileInputRef = useRef(null);
@@ -47,7 +48,8 @@ export default function ImagePicker({
                 bucket: bucketName,
                 userAuthId: userId,
                 uniqueFileName: false,
-                upsert: true
+                upsert: true,
+                placa
             });
             if (uploadedUrl) {
                 setPreviewUrl(uploadedUrl);

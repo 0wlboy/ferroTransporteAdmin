@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { supabase } from "../../utils/supabase";
+import useUploadImage from "./useUploadImage";
 
 /**
  * Reusable hook to update vehicle information.
  */
 export function useUpdateCar() {
+    const { uploadImage } = useUploadImage();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
@@ -33,27 +35,12 @@ export function useUpdateCar() {
 
             // 2. Upload new vehicle image if provided
             if (carImageFile) {
-                try {
-                    const fileExt = carImageFile.name.split(".").pop();
-                    const fileName = `car_${vehiclePlaca.toUpperCase()}_${Date.now()}.${fileExt}`;
-
-                    const { error: uploadError } = await supabase.storage
-                        .from("fotosVehiculos")
-                        .upload(fileName, carImageFile, {
-                            cacheControl: "3600",
-                            upsert: true
-                        });
-
-                    if (uploadError) {
-                        throw new Error("Error al subir la imagen del vehículo: " + uploadError.message);
-                    }
-
-                    const { data: { publicUrl } } = supabase.storage
-                        .from("fotosVehiculos")
-                        .getPublicUrl(fileName);
-                    fotoUrl = publicUrl;
-                } catch (uploadException) {
-                    console.error("Excepción durante la subida de foto de vehículo:", uploadException);
+                fotoUrl = await uploadImage(carImageFile, {
+                    bucket: "fotosVehiculos",
+                    placa: vehiclePlaca,
+                    upsert: false
+                });
+                if (!fotoUrl) {
                     throw new Error("No se pudo cargar la imagen del vehículo.");
                 }
             }
