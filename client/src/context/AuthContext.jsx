@@ -54,84 +54,77 @@ export default function AuthProvider({ children }) {
 
     // Recover session on mount
     useEffect(() => {
-        const initializeAuth = async () => {
+        // Safety timeout: if nothing resolves in 4s, unblock the UI
+        const safetyTimeout = setTimeout(() => {
+            setLoading(false);
+        }, 4000);
+
+        // Check localStorage immediately (sync) to unblock UI fast
+        const storedSession = localStorage.getItem("ft_admin_session");
+        if (storedSession) {
             try {
-                const storedSession = localStorage.getItem("ft_admin_session");
-                if (storedSession) {
-                    const { user, timestamp } = JSON.parse(storedSession);
-                    const now = Date.now();
-                    const hours24 = 24 * 60 * 60 * 1000;
-
-                    if (now - timestamp > hours24) {
-                        // Expired after 24 hours
-                        localStorage.removeItem("ft_admin_session");
-                        await supabase.auth.signOut();
-                        setCurrentUser(null);
-                    } else {
-                        // Valid session from localStorage
-                        setCurrentUser(user);
-                    }
+                const { user, timestamp } = JSON.parse(storedSession);
+                const hours24 = 24 * 60 * 60 * 1000;
+                if (Date.now() - timestamp < hours24) {
+                    // Valid cached session — render immediately, no network needed
+                    setCurrentUser(user);
+                    setLoading(false);
+                    clearTimeout(safetyTimeout);
                 } else {
-                    // Check if supabase auth has a session
-                    const { data: { session } } = await supabase.auth.getSession();
-                    if (session) {
-                        const matchedUser = await fetchUserProfile(session);
-                        if (!matchedUser) {
-                            await supabase.auth.signOut();
-                        } else {
-                            // Save to local storage
-                            const sessionData = {
-                                user: matchedUser,
-                                timestamp: Date.now()
-                            };
-                            localStorage.setItem("ft_admin_session", JSON.stringify(sessionData));
-                        }
-                    }
+                    // Expired — clean up and let onAuthStateChange handle the rest
+                    localStorage.removeItem("ft_admin_session");
                 }
-            } catch (err) {
-                console.error("Error initializing auth:", err);
-            } finally {
-                setLoading(false);
+            } catch {
+                localStorage.removeItem("ft_admin_session");
             }
-        };
+        }
 
-        initializeAuth();
-
-        // Listen for auth state changes
+        // Let onAuthStateChange be the single source of truth for network-based session
+        let initialized = false;
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (session) {
-                const storedSession = localStorage.getItem("ft_admin_session");
-                if (storedSession) {
-                    const { user, timestamp } = JSON.parse(storedSession);
-                    const now = Date.now();
-                    const hours24 = 24 * 60 * 60 * 1000;
-                    if (now - timestamp > hours24) {
+                const stored = localStorage.getItem("ft_admin_session");
+                if (stored) {
+                    try {
+                        const { user, timestamp } = JSON.parse(stored);
+                        const hours24 = 24 * 60 * 60 * 1000;
+                        if (Date.now() - timestamp > hours24) {
+                            localStorage.removeItem("ft_admin_session");
+                            await supabase.auth.signOut();
+                            setCurrentUser(null);
+                        } else {
+                            setCurrentUser(user);
+                        }
+                    } catch {
                         localStorage.removeItem("ft_admin_session");
-                        await supabase.auth.signOut();
-                        setCurrentUser(null);
-                    } else {
-                        setCurrentUser(user);
                     }
                 } else {
+                    // Only fetch from DB if we don't have a cached profile
                     const matchedUser = await fetchUserProfile(session);
                     if (!matchedUser && event === "SIGNED_IN") {
                         await supabase.auth.signOut();
                     } else if (matchedUser) {
-                        const sessionData = {
+                        localStorage.setItem("ft_admin_session", JSON.stringify({
                             user: matchedUser,
                             timestamp: Date.now()
-                        };
-                        localStorage.setItem("ft_admin_session", JSON.stringify(sessionData));
+                        }));
                     }
                 }
-            } else {
+            } else if (!session && initialized) {
+                // Only clear on explicit sign-out, not on initial no-session
                 localStorage.removeItem("ft_admin_session");
                 setCurrentUser(null);
             }
-            setLoading(false);
+
+            if (!initialized) {
+                initialized = true;
+                clearTimeout(safetyTimeout);
+                setLoading(false);
+            }
         });
 
         return () => {
+            clearTimeout(safetyTimeout);
             subscription?.unsubscribe();
         };
     }, []);

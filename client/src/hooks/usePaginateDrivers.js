@@ -32,8 +32,15 @@ export function usePaginateDrivers({ initialPageSize = 4 } = {}) {
 
   // Filtros y Ordenamiento
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("fecha_desc");
+
+  // Debounce — espera 350ms después del último cambio antes de buscar
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchTerm), 350);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
 
   // Estadísticas para las tarjetas
   const [stats, setStats] = useState({
@@ -62,8 +69,8 @@ export function usePaginateDrivers({ initialPageSize = 4 } = {}) {
           .eq("role", "Conductor")
           .neq("deleted", true);
 
-        if (searchTerm.trim() !== "") {
-          const term = `%${searchTerm.trim()}%`;
+        if (debouncedSearch.trim() !== "") {
+          const term = `%${debouncedSearch.trim()}%`;
           query = query.or(
             `ci_user.ilike.${term},primer_nombre.ilike.${term},apellido.ilike.${term}`,
           );
@@ -232,13 +239,13 @@ export function usePaginateDrivers({ initialPageSize = 4 } = {}) {
     };
 
     fetchDrivers();
-  }, [page, pageSize, searchTerm, statusFilter, sortBy]);
+  }, [page, pageSize, debouncedSearch, statusFilter, sortBy]);
 
   // Reiniciar paginación al cambiar filtros
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setPage(1);
-  }, [searchTerm, statusFilter, sortBy]);
+  }, [debouncedSearch, statusFilter, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
 

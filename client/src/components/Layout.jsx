@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Outlet, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Sidebar from "./UI/Sidebar";
@@ -15,18 +15,21 @@ export default function Layout() {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
 
     useEffect(() => {
+        let timeoutId;
         const handleResize = () => {
-            if (window.innerWidth < 1024) {
-                setCollapsed(true);
-            } else {
-                setCollapsed(false);
-            }
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => {
+                setCollapsed(window.innerWidth < 1024);
+            }, 100);
         };
 
         window.addEventListener("resize", handleResize);
-        handleResize(); // Initialize on mount
+        setCollapsed(window.innerWidth < 1024); // Initialize on mount (sync, no debounce)
 
-        return () => window.removeEventListener("resize", handleResize);
+        return () => {
+            window.removeEventListener("resize", handleResize);
+            clearTimeout(timeoutId);
+        };
     }, []);
 
     if (!currentUser) {
@@ -42,42 +45,25 @@ export default function Layout() {
         }
     };
 
-    // Determine header title based on route path
-    const getHeaderTitle = () => {
-        if (location.pathname.startsWith("/user-activity")) {
-            return "Actividad de Usuario";
-        }
-        if (location.pathname.startsWith("/car-activity")) {
-            return "Actividad de Vehículo";
-        }
-        if (location.pathname.startsWith("/update-car")) {
-            return "Dashboard";
-        }
+    const headerTitle = useMemo(() => {
+        if (location.pathname.startsWith("/user-activity")) return "Actividad de Usuario";
+        if (location.pathname.startsWith("/car-activity")) return "Actividad de Vehículo";
+        if (location.pathname.startsWith("/update-car")) return "Dashboard";
         switch (location.pathname) {
-            case "/petitions-view":
-                return "Peticiones";
-            case "/passenger-view":
-                return "Pasajeros";
-            case "/drivers-view":
-                return "Conductores";
-            case "/vehicle-view":
-                return "Vehículos";
-            case "/locations-view":
-                return "Localizaciones";
-            case "/home-view":
-                return "Home";
+            case "/petitions-view": return "Peticiones";
+            case "/passenger-view": return "Pasajeros";
+            case "/drivers-view": return "Conductores";
+            case "/vehicle-view": return "Vehículos";
+            case "/locations-view": return "Localizaciones";
+            case "/home-view": return "Home";
             case "/add-passenger":
             case "/add-driver":
             case "/add-car":
-            case "/update-profile":
-                return "Dashboard";
-            case "/add-location":
-                return "Añadir Localizaciones";
-
-            default:
-                return "Panel de Administración";
+            case "/update-profile": return "Dashboard";
+            case "/add-location": return "Añadir Localizaciones";
+            default: return "Panel de Administración";
         }
-    };
+    }, [location.pathname]);
 
     return (
         <div className="flex h-screen bg-main-bg overflow-hidden font-sans antialiased text-gray-800">
@@ -131,7 +117,7 @@ export default function Layout() {
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
                 {/* Top Header */}
                 <Header
-                    title={getHeaderTitle()}
+                    title={headerTitle}
                     collapsed={collapsed}
                     mobileOpen={mobileOpen}
                     setMobileOpen={setMobileOpen}

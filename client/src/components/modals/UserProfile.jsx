@@ -1,12 +1,14 @@
+import { useState } from "react";
 import { X, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import LogoutConfirmModal from "./LogoutConfirmModal";
 
 export default function UserProfileModal({ onClose, onLogout }) {
     const navigate = useNavigate();
     const { currentUser } = useAuth();
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-    // Mock details matching the screenshot exactly if user details aren't loaded
     const userProfile = {
         name: currentUser?.name || "Javier Arnaldo",
         email: currentUser?.email || "javier.arnaldo@transadmin.com",
@@ -63,7 +65,6 @@ export default function UserProfileModal({ onClose, onLogout }) {
                     {/* CI Row */}
                     <div className="flex items-center gap-3">
                         <div className="w-5 h-5 flex items-center justify-center shrink-0">
-                            {/* SVG matching the portrait icon on mockup badge */}
                             <svg className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                                 <rect x="3" y="4" width="18" height="16" rx="2" />
                                 <circle cx="12" cy="10" r="3" />
@@ -88,18 +89,28 @@ export default function UserProfileModal({ onClose, onLogout }) {
                         Actualizar Perfil
                     </button>
                     
+                    {/* Triggers the confirm modal instead of logging out directly */}
                     <button 
-                        onClick={() => {
-                            onClose();
-                            onLogout();
-                        }}
+                        onClick={() => setShowLogoutConfirm(true)}
                         className="w-full py-2.5 bg-white hover:bg-[#FAF5F6] border border-primary text-primary font-bold rounded-xl text-xs tracking-wider transition-all cursor-pointer"
                     >
-                        Cerrar Sesion
+                        Cerrar Sesión
                     </button>
                 </div>
 
             </div>
+
+            {/* Logout Confirmation Modal */}
+            {showLogoutConfirm && (
+                <LogoutConfirmModal
+                    onConfirm={() => {
+                        setShowLogoutConfirm(false);
+                        onClose();
+                        onLogout();
+                    }}
+                    onCancel={() => setShowLogoutConfirm(false)}
+                />
+            )}
         </>
     );
 }

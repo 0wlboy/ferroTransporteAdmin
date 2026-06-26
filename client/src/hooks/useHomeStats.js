@@ -83,43 +83,55 @@ export function useHomeStats() {
             setLoading(true);
             setError(null);
             try {
-                // 1. Fetch statistics
-                // Drivers count
-                const { data: drivers, error: driversError } = await supabase
-                    .from("usuarios")
-                    .select("activo")
-                    .eq("role", "Conductor")
-                    .neq("deleted", true);
-
-                // Vehicles count
-                const { data: vehicles, error: vehiclesError } = await supabase
-                    .from("vehiculos")
-                    .select("estado");
-
                 // Petitions (Today and Recent)
                 const startOfToday = new Date();
                 startOfToday.setHours(0, 0, 0, 0);
                 const startOfTodayISO = startOfToday.toISOString();
 
                 // Today's petitions for counters
-                const { data: todayPetitions, error: todayPetitionsError } = await supabase
+                const todayPetitionsQuery = supabase
                     .from("peticiones")
                     .select("estado, prioridad, created_at")
                     .gte("created_at", startOfTodayISO)
                     .neq("deleted", true);
 
                 // Recent petitions (limit 10)
-                const { data: rawRecent, error: recentError } = await supabase
+                const recentQuery = supabase
                     .from("peticiones")
                     .select("*")
                     .neq("deleted", true)
                     .order("created_at", { ascending: false })
                     .limit(10);
 
+                // Urgent petitions — run in parallel from the start
+                const urgentQuery = supabase
+                    .from("peticiones")
+                    .select("*")
+                    .eq("prioridad", "Alta")
+                    .neq("estado", "Completado")
+                    .neq("estado", "Cancelado")
+                    .neq("deleted", true)
+                    .limit(5);
+
+                const [
+                    { data: drivers, error: driversError },
+                    { data: vehicles, error: vehiclesError },
+                    { data: todayPetitions, error: todayPetitionsError },
+                    { data: rawRecent, error: recentError },
+                    { data: prefetchedUrgent, error: urgentError }
+                ] = await Promise.all([
+                    supabase.from("usuarios").select("activo").eq("role", "Conductor").neq("deleted", true),
+                    supabase.from("vehiculos").select("estado"),
+                    todayPetitionsQuery,
+                    recentQuery,
+                    urgentQuery
+                ]);
+
                 if (driversError) throw driversError;
                 if (vehiclesError) throw vehiclesError;
                 if (todayPetitionsError) throw todayPetitionsError;
                 if (recentError) throw recentError;
+                // urgentError is non-fatal, we'll fall back gracefully
 
                 // Process drivers stats
                 const totalDrivers = drivers?.length || 0;
@@ -184,30 +196,16 @@ export function useHomeStats() {
                     setChartData(fallbackChartData);
                 }
 
-                // Resolve user/loc names for lists
-                const allRecentAndUrgent = [...(rawRecent || [])];
-
-                // Get high-priority active petitions for urgent sidebar (from all fetched or query)
-                let rawUrgent = allRecentAndUrgent.filter(
+                // Get high-priority active petitions for urgent sidebar
+                // Priority: use what's already in rawRecent, else use prefetched urgent query
+                let rawUrgent = (rawRecent || []).filter(
                     p => p.prioridad === "Alta" && p.estado !== "Completado" && p.estado !== "Cancelado"
                 );
-
-                // If no urgent petitions from recent, fetch them specifically
-                if (rawUrgent.length === 0) {
-                    const { data: fetchedUrgent, error: urgError } = await supabase
-                        .from("peticiones")
-                        .select("*")
-                        .eq("prioridad", "Alta")
-                        .neq("estado", "Completado")
-                        .neq("estado", "Cancelado")
-                        .neq("deleted", true)
-                        .limit(5);
-
-                    if (!urgError && fetchedUrgent) {
-                        rawUrgent = fetchedUrgent;
-                        allRecentAndUrgent.push(...fetchedUrgent);
-                    }
+                if (rawUrgent.length === 0 && !urgentError && prefetchedUrgent) {
+                    rawUrgent = prefetchedUrgent;
                 }
+
+                const allRecentAndUrgent = [...(rawRecent || []), ...rawUrgent.filter(u => !rawRecent?.find(r => r.id === u.id))];
 
                 if (allRecentAndUrgent.length > 0) {
                     // Resolve user names

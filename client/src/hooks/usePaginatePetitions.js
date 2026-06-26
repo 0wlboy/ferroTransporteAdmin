@@ -32,8 +32,15 @@ export function usePaginatePetitions({ initialPageSize = 4 } = {}) {
 
     // Filtros y Ordenamiento
     const [searchTerm, setSearchTerm] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
     const [sortBy, setSortBy] = useState("fecha_desc");
+
+    // Debounce — espera 350ms después del último cambio antes de buscar
+    useEffect(() => {
+        const t = setTimeout(() => setDebouncedSearch(searchTerm), 350);
+        return () => clearTimeout(t);
+    }, [searchTerm]);
 
     // Deletion, cancellation and refetch states
     const [refetchTrigger, setRefetchTrigger] = useState(0);
@@ -65,8 +72,8 @@ export function usePaginatePetitions({ initialPageSize = 4 } = {}) {
                 // 1. Obtener peticiones filtradas y ordenadas
                 let query = supabase.from("peticiones").select("*", { count: "exact" }).neq("deleted", true);
 
-                if (searchTerm.trim() !== "") {
-                    const term = `%${searchTerm.trim()}%`;
+                if (debouncedSearch.trim() !== "") {
+                    const term = `%${debouncedSearch.trim()}%`;
                     query = query.or(`ci_pasajero.ilike.${term},ci_driver.ilike.${term},placa_vehiculo.ilike.${term}`);
                 }
 
@@ -219,13 +226,13 @@ export function usePaginatePetitions({ initialPageSize = 4 } = {}) {
         };
 
         fetchPetitions();
-    }, [page, pageSize, searchTerm, statusFilter, sortBy, refetchTrigger]);
+    }, [page, pageSize, debouncedSearch, statusFilter, sortBy, refetchTrigger]);
 
     // Reiniciar paginación al cambiar filtros
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setPage(1);
-    }, [searchTerm, statusFilter, sortBy]);
+    }, [debouncedSearch, statusFilter, sortBy]);
 
     const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
 
