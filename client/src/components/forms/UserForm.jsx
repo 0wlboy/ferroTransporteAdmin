@@ -129,6 +129,7 @@ export default function UserForm({
     telefono !== (initialData?.telefono || initialData?.telf || "") ||
     idGerencia !==
       (initialData?.idGerencia || initialData?.id_gerencia || "") ||
+    role !== (initialData?.role || initialData?.rol || "") ||
     hasExternalChanges;
   const hasAnyError = !!(
     errors.email ||
@@ -172,6 +173,7 @@ export default function UserForm({
       ci,
       telefono,
       idGerencia,
+      role,
     });
   };
 

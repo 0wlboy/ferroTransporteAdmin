@@ -18,10 +18,10 @@ export function useUpdateUser() {
         setSuccess(false);
 
         try {
-            // 1. Fetch current database record to obtain auth_id and current avatar URL
+            // 1. Fetch current database record to obtain auth_id, ci_user, and current avatar URL
             const { data: dbUser, error: fetchError } = await supabase
                 .from("usuarios")
-                .select("auth_id, foto_url, email, role")
+                .select("auth_id, foto_url, email, role, ci_user")
                 .eq("id", userId)
                 .single();
 
@@ -60,7 +60,7 @@ export function useUpdateUser() {
                 }
             }
 
-            // 3. If updating current logged in user, update auth credentials
+            // 3. If updating current logged in user, update auth credentials; otherwise use RPC for other users
             const { data: { session } } = await supabase.auth.getSession();
             const isCurrentUser = session?.user && session.user.id === authId;
 
@@ -78,7 +78,22 @@ export function useUpdateUser() {
                 if (Object.keys(authUpdate).length > 0) {
                     const { error: authError } = await supabase.auth.updateUser(authUpdate);
                     if (authError) {
-                        throw new Error("Error al actualizar credenciales: " + authError.message);
+                        throw new Error("Error al actualizar tus credenciales: " + authError.message);
+                    }
+                }
+            } else {
+                // If updating another user, call the secure database function (RPC)
+                const needsAuthUpdate = (email && email.toLowerCase() !== dbUser.email?.toLowerCase()) || password;
+
+                if (needsAuthUpdate) {
+                    const { error: rpcError } = await supabase.rpc("admin_update_user_auth", {
+                        target_user_id: authId,
+                        new_email: email && email.toLowerCase() !== dbUser.email?.toLowerCase() ? email : null,
+                        new_password: password || null
+                    });
+
+                    if (rpcError) {
+                        throw new Error("Error al actualizar credenciales del usuario: " + rpcError.message);
                     }
                 }
             }
@@ -109,6 +124,23 @@ export function useUpdateUser() {
 
             if (updateError) {
                 throw new Error("Error al actualizar la base de datos: " + updateError.message);
+            }
+
+            // 6. If role changed from Conductor to Pasajero, unassign any assigned vehicle in 'vehiculos' table
+            const previousRole = dbUser.role;
+            const newRole = role || dbUser.role;
+            if (previousRole === "Conductor" && newRole === "Pasajero") {
+                const driverCi = dbUser.ci_user || ci;
+                if (driverCi) {
+                    const { error: vehicleError } = await supabase
+                        .from("vehiculos")
+                        .update({ ci_driver: null })
+                        .eq("ci_driver", driverCi);
+
+                    if (vehicleError) {
+                        console.error("Error al desasignar vehículo del conductor:", vehicleError.message);
+                    }
+                }
             }
 
             // Build return object from in-memory data (avoids RLS issues with .select() on update)
@@ -147,6 +179,20 @@ export function useUpdateUser() {
         setDeleting(true);
         setDeleteError(null);
         try {
+            if (userRole === "Conductor") {
+                const { data: u } = await supabase
+                    .from("usuarios")
+                    .select("ci_user")
+                    .eq("id", userId)
+                    .single();
+                if (u?.ci_user) {
+                    await supabase
+                        .from("vehiculos")
+                        .update({ ci_driver: null })
+                        .eq("ci_driver", u.ci_user);
+                }
+            }
+
             const { error: updateError } = await supabase
                 .from("usuarios")
                 .update({ deleted: true })
